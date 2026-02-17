@@ -1,0 +1,14 @@
+{
+  "name": "mister-anderson",
+  "description": "Beads development for humans",
+  "version": "0.0.1",
+  "author": {
+    "name": "Miguel Ramos",
+    "email": "miguel.ramos@websublime.com",
+    "url": "https://github.com/miguelramos"
+  },
+  "homepage": "https://github.com/websublime/mister-anderson",
+  "repository": "https://github.com/websublime/mister-anderson",
+  "license": "MIT",
+  "keywords": ["beads", "development"]
+}
