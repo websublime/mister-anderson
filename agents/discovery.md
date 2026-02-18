@@ -149,11 +149,9 @@ For each section in external agent content:
 
 ---
 
-## Step 3: Inject Beads Workflow (and UI Constraints for Frontend)
+## Step 3: Inject Beads Workflow
 
-**For every implementation agent, inject beads workflow at the BEGINNING after frontmatter and intro.**
-
-**For frontend agents (react, vue, svelte, angular, nextjs), ALSO inject UI constraints.**
+**For every implementation agent, inject beads workflow at the BEGINNING after intro.**
 
 ### Injection Format
 
@@ -164,7 +162,7 @@ This grants supervisors access to ALL available tools including MCP tools and Sk
 ---
 name: [agent-name]
 description: [brief - one line]
-model: sonnet
+model: opus
 tools: *
 ---
 
@@ -180,7 +178,7 @@ tools: *
 
 ## Beads Workflow
 
-[INSERT CONTENTS OF ${CLAUDE_PLUGIN_ROOT}/skills/setup-project/templates/BEADS-WORKFLOW.md HERE]
+[INSERT CONTENTS OF ./skills/setup-project/templates/BEADS-WORKFLOW.md HERE]
 
 ---
 
@@ -213,45 +211,18 @@ tools: *
 
 ---
 
-[FOR FRONTEND SUPERVISORS ONLY]
-[INSERT CONTENTS OF .claude/ui-constraints.md HERE]
-[INSERT CONTENTS OF .claude/frontend-reviews-requirement.md HERE]
-
----
-
 ## Completion Report
 
 ```
 BEAD {BEAD_ID} COMPLETE
-Worktree: .worktrees/bd-{BEAD_ID}
+Branch: <BRACH-NAME>
 Files: [filename1, filename2]
 Tests: pass
 Summary: [1 sentence max]
 ```
 ```
 
-**CRITICAL:** You MUST read the actual `${CLAUDE_PLUGIN_ROOT}/skills/setup-project/templates/BEADS-WORKFLOW.md` file and insert its contents. Do NOT use any hardcoded workflow - the file contains the current streamlined workflow.
-
-**FOR FRONTEND SUPERVISORS:** Also read `.claude/ui-constraints.md` AND `.claude/frontend-reviews-requirement.md` and insert both after the beads workflow. Frontend supervisors include: react-supervisor, vue-supervisor, svelte-supervisor, angular-supervisor, nextjs-supervisor.
-
-**FOR REACT/NEXT.JS SUPERVISORS ONLY:** After RAMS requirement, add this mandatory skill requirement:
-
-```markdown
-## Mandatory: React Best Practices Skill
-
-<CRITICAL-REQUIREMENT>
-You MUST invoke the `react-best-practices` skill BEFORE implementing ANY React/Next.js code.
-
-This is NOT optional. Before writing components, hooks, data fetching, or any React code:
-
-1. Invoke: `Skill(skill="react-best-practices")`
-2. Review the relevant patterns for your task
-3. Apply the patterns as you implement
-
-The skill contains 40+ performance optimization rules across 8 categories.
-Failure to use this skill will result in suboptimal, unreviewed code.
-</CRITICAL-REQUIREMENT>
-```
+**CRITICAL:** You MUST read the actual `./skills/setup-project/templates/BEADS-WORKFLOW.md` file and insert its contents. Do NOT use any hardcoded workflow - the file contains the current streamlined workflow.
 
 ### CRITICAL: Naming Convention
 
@@ -288,66 +259,13 @@ The filename and `name:` in YAML frontmatter MUST match and end in `-supervisor`
 
 ---
 
-## Step 3.5: Install React Best Practices Skill (React/Next.js Projects Only)
-
-**If React or Next.js was detected in Step 1, install the react-best-practices skill.**
-
-### Installation Steps
-
-1. **Create skills directory if it doesn't exist:**
-   ```bash
-   mkdir -p .claude/skills/react-best-practices
-   ```
-
-2. **Copy the skill from beads-orchestration templates:**
-
-   The skill template is located at: `templates/skills/react-best-practices/SKILL.md`
-
-   During bootstrap, this file should have been copied to the project. If running discovery manually, read from the orchestration repo and write to project:
-
-   ```
-   Read(file_path="[beads-orchestration-path]/templates/skills/react-best-practices/SKILL.md")
-   Write(file_path=".claude/skills/react-best-practices/SKILL.md", content=<skill-content>)
-   ```
-
-3. **Verify skill is accessible:**
-   ```
-   Glob(pattern=".claude/skills/react-best-practices/SKILL.md")
-   ```
-
-### Why This Skill is Required
-
-The react-best-practices skill contains 40+ performance optimization rules from Vercel Engineering:
-- Eliminating waterfalls (CRITICAL)
-- Bundle size optimization (CRITICAL)
-- Server-side performance (HIGH)
-- Client-side data fetching (MEDIUM-HIGH)
-- Re-render optimization (MEDIUM)
-- Rendering performance (MEDIUM)
-- JavaScript performance (LOW-MEDIUM)
-- Advanced patterns (LOW)
-
-Without this skill, React supervisors may write code that:
-- Creates waterfall async patterns
-- Imports entire libraries via barrel files
-- Doesn't use proper Suspense boundaries
-- Serializes unnecessary data across RSC boundaries
-
----
-
 ## Step 4: Write Agent Files
 
 For each specialist:
 
 1. **Read required files:**
    ```
-   Read(file_path="${CLAUDE_PLUGIN_ROOT}/skills/setup-project/templates/BEADS-WORKFLOW.md")
-   ```
-
-   **For frontend supervisors, also read:**
-   ```
-   Read(file_path=".claude/ui-constraints.md")
-   Read(file_path=".claude/frontend-reviews-requirement.md")
+   Read(file_path="./skills/setup-project/templates/BEADS-WORKFLOW.md")
    ```
 
 2. **Construct complete agent:**
@@ -356,12 +274,6 @@ For each specialist:
    - "You MUST abide by the following workflow:"
    - Beads workflow snippet
    - Separator `---`
-   - **[Frontend only]** UI constraints
-   - **[Frontend only]** Separator `---`
-   - **[Frontend only]** Frontend reviews requirement (RAMS + Web Interface Guidelines)
-   - **[Frontend only]** Separator `---`
-   - **[React/Next.js only]** React best practices skill requirement
-   - **[React/Next.js only]** Separator `---`
    - External agent's specialty content
 
 3. **Write to project:**
@@ -373,21 +285,6 @@ For each specialist:
    ```
    Created [role].md ([Name]) - sourced from external directory [+ui-constraints +rams if frontend]
    ```
-
-5. **Register frontend supervisors for review enforcement:**
-
-   **For each frontend supervisor created**, append its name to the frontend supervisors config:
-   ```bash
-   echo "[supervisor-name]" >> .claude/frontend-supervisors.txt
-   ```
-
-   Example: If you create `react-supervisor` and `vue-supervisor`:
-   ```bash
-   echo "react-supervisor" >> .claude/frontend-supervisors.txt
-   echo "vue-supervisor" >> .claude/frontend-supervisors.txt
-   ```
-
-   This registers them with the frontend reviews hook. Supervisors in this file must run both RAMS and Web Interface Guidelines reviews before completing.
 
 ---
 
@@ -401,7 +298,6 @@ After creating supervisors, update CLAUDE.md with detected information:
 ## Tech Stack
 
 - **Languages**: TypeScript, Python
-- **Frontend**: React 18, Next.js 14, Tailwind CSS
 - **Backend**: FastAPI, PostgreSQL
 - **Infrastructure**: Docker, Vercel
 ```
@@ -443,10 +339,6 @@ FILTERING_APPLIED:
 
 BEADS_WORKFLOW_INJECTED: Yes (all implementation agents)
 DISCIPLINE_SKILL_REQUIRED: Yes (in beads workflow)
-
-FRONTEND_REVIEWS_ENFORCEMENT:
-  - Registered supervisors: [list of frontend supervisors in .claude/frontend-supervisors.txt]
-  - Required reviews: RAMS (accessibility) + Web Interface Guidelines (design)
 
 SKILLS_INSTALLED:
   - react-best-practices: [Yes/No/N/A] (React/Next.js projects only)
@@ -494,7 +386,3 @@ Before reporting:
 - [ ] Agent files have correct YAML frontmatter
 - [ ] Names assigned from suggested list
 - [ ] CLAUDE.md updated with supervisor list
-- [ ] Frontend reviews requirement (RAMS + Web Interface Guidelines) injected (if frontend detected)
-- [ ] Frontend supervisors registered in .claude/frontend-supervisors.txt
-- [ ] React best practices skill installed (if React/Next.js detected)
-- [ ] React supervisor has mandatory skill requirement (if React/Next.js detected)

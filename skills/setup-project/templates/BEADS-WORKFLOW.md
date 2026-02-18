@@ -8,29 +8,37 @@
 
 2. **Check Status:**
    ```bash
+   bd sync
    bd list --status in_progress --json
    git branch --show-current
    git status
    ```
 
-3. **Mark in progress:**
+3. **Git Branch:**
+    ```bash
+    # Create branch (naming convention: feature/p0-XX-short-description)
+    # Types: feature, fix, chore following conventional commits
+    git checkout -b <type>/<task-id-kebab-case>
+    ```
+
+4. **Mark in progress:**
    ```bash
    bd update {BEAD_ID} --status in_progress
    ```
 
-4. **Read bead comments for investigation context:**
+5. **Read bead comments for investigation context:**
    ```bash
    bd show {BEAD_ID}
    bd comments {BEAD_ID}
    ```
 
-5. **If epic child: Read design doc:**
+6. **If epic child: Read design doc:**
    ```bash
    design_path=$(bd show {EPIC_ID} --json | jq -r '.[0].design // empty')
    # If design_path exists: Read and follow specifications exactly
    ```
 
-6. **Invoke discipline skill:**
+7. **Invoke discipline skill:**
    ```
    Skill(skill: "subagents-discipline")
    ```
@@ -47,7 +55,7 @@ If the orchestrator's approach would break something, explain what you found and
 </execute-with-confidence>
 
 <during-implementation>
-1. Work ONLY in your worktree: `.worktrees/bd-{BEAD_ID}/`
+1. Work ONLY in your branch
 2. Commit frequently with descriptive messages
 3. Log progress: `bd comment {BEAD_ID} "Completed X, working on Y"`
 </during-implementation>
@@ -78,25 +86,24 @@ WARNING: You will be BLOCKED if you skip any step. Execute ALL in order:
 
 5. **Mark status:**
    ```bash
-   bd update {BEAD_ID} --status inreview
+   bd update {BEAD_ID} --status in-review
    ```
 
 6. **Return completion report:**
    ```
    BEAD {BEAD_ID} COMPLETE
-   Worktree: .worktrees/bd-{BEAD_ID}
    Files: [names only]
    Tests: pass
    Summary: [1 sentence]
    ```
 
-The SubagentStop hook verifies: worktree exists, no uncommitted changes, pushed to remote, bead status updated.
+The SubagentStop hook verifies: branch exists, no uncommitted changes, pushed to remote, bead status updated.
 </on-completion>
 
 <banned>
 - Working directly on main branch
 - Implementing without BEAD_ID
 - Merging your own branch (user merges via PR)
-- Editing files outside your worktree
+- Editing files outside your project
 </banned>
 </beads-workflow>

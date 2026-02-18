@@ -135,11 +135,29 @@ cp ./skills/setup-project/templates/AGENTS.md ./
 
 ---
 
-## Step 4: Create Tech supervisors
+## Step 4: Copy skills directory
+
+Copy skills directory to .claude/skills.
+
+```bash
+cp -r ./skills ./claude/skills
+```
+
+---
+
+## Step 5: Create Tech supervisors
 
 ```python
 Task(
     subagent_type="discovery",
     prompt="Detect tech stack and create supervisors for this project"
 )
+```
+
+## Step 6: Delete Setup Skills
+
+Delete setup skills directory from .claude/skills/setup-project.
+
+```bash
+rm -rf ./claude/skills/setup-project
 ```
