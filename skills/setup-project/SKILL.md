@@ -154,7 +154,26 @@ Task(
 )
 ```
 
-## Step 6: Delete Setup Skills
+---
+
+## Step 6: Copy core agents
+
+Use the core agent templates from `./agents/`.
+
+Copy the files to .claude/agents directory.
+
+```bash
+cp ./agents/architect.md ./.claude/agents/
+cp ./agents/research.md ./.claude/agents/
+cp ./agents/discovery.md ./.claude/agents/
+cp ./agents/code-reviewer.md ./.claude/agents/
+cp ./agents/refactoring-supervisor.md ./.claude/agents/
+cp ./agents/beads-owner.md ./.claude/agents/
+```
+
+---
+
+## Step 7: Delete Setup Skills
 
 Delete setup skills directory from .claude/skills/setup-project.
 

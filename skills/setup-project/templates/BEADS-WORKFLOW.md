@@ -8,8 +8,6 @@
 
 2. **Check Status:**
    ```bash
-   bd sync
-   bd list --status in_progress --json
    git branch --show-current
    git status
    ```
@@ -79,9 +77,9 @@ WARNING: You will be BLOCKED if you skip any step. Execute ALL in order:
    ```
    If you discovered a gotcha or pattern worth remembering, log it. Not required.
 
-4. **Leave completion comment:**
+4. **Add review label:**
    ```bash
-   bd comment {BEAD_ID} "Completed: [summary]"
+   bd label {BEAD_ID} needs-review
    ```
 
 5. **Mark status:**
@@ -97,7 +95,7 @@ WARNING: You will be BLOCKED if you skip any step. Execute ALL in order:
    Summary: [1 sentence]
    ```
 
-The SubagentStop hook verifies: branch exists, no uncommitted changes, pushed to remote, bead status updated.
+The SubagentStop hook verifies: branch exists, no uncommitted changes, pushed to remote, bead status updated, needs-review label added.
 </on-completion>
 
 <banned>

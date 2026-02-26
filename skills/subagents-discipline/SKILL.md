@@ -108,6 +108,22 @@ Skip if the code is self-explanatory. This is not enforced.
 
 ---
 
+## Rule 5: Log Completion Summary (Mandatory)
+
+Before marking the bead as in-review, you MUST leave a structured completion comment summarizing what was done. This is consumed by the code-reviewer agent and the orchestrator to understand the scope of changes without reading every diff.
+
+```bash
+bd comment {BEAD_ID} "COMPLETED:
+Summary: [1-2 sentences describing what was implemented/fixed]
+Files changed: [list of files modified, created, or deleted]
+Decisions: [any non-obvious choices made during implementation]
+Tests: [what was tested and how — functional verification, unit tests, etc.]"
+```
+
+This is NOT optional. Every implementation task must have a COMPLETED comment before marking in-review.
+
+---
+
 ## For Epic Children
 
 If your BEAD_ID contains a dot (e.g., BD-001.2), you're implementing part of a larger feature:

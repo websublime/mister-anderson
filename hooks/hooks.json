@@ -3,12 +3,12 @@
     "PreToolUse": [
       {
         "matcher": "Task",
-        "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/inject-discipline-reminder.sh" }]
+        "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/inject-discipline-reminder.sh" }]
       }
     ],
     "SessionStart": [
       {
-        "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/session-start.sh" }]
+        "hooks": [{ "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh" }]
       }
     ]
   }
