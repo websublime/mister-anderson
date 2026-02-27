@@ -63,13 +63,13 @@ After the code-reviewer completes:
 3. Present the review summary to the user
 
 **If APPROVE:**
-- Inform user: "Code review passed. The branch is ready for merge."
+- Inform user: "Code review passed. Ready for QA validation."
 - Update labels:
   ```bash
   bd label {BEAD_ID} --remove needs-review
   bd label {BEAD_ID} approved
   ```
-- No further dispatch needed
+- Recommend: "Run `/qa-task {BEAD_ID}` to validate spec conformity, tests, build, and lint before merging."
 
 **If NEEDS-REFACTORING:**
 - Present findings to user

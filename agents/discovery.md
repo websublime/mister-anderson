@@ -269,7 +269,7 @@ The filename and `name:` in YAML frontmatter MUST match and end in `-supervisor`
 | Android mobile | Ava |
 | Blockchain | Nova |
 | ML/AI | Iris |
-| Go developer | Grace |
+| Go developer | Greta |
 | Rust developer | Neo |
 
 ---

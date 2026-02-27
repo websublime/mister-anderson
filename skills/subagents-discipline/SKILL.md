@@ -91,20 +91,40 @@ Before claiming you can't fully test:
 2. **If any tool can help verify the feature works**, use it
 3. **Be resourceful** - browser automation, database inspection, API testing tools
 
-## Rule 4: Log Your Approach (Optional)
+## Rule 4: Log Decisions and Deviations (Mandatory when applicable)
 
-If you deviated from the orchestrator's suggestion, found a better path, or made a choice future maintainers might question:
+During implementation, log every non-trivial decision and any deviation from the spec/design doc as bead comments. This creates a traceable decision trail that the QA agent and humans can review.
+
+### Decisions
+
+When you choose between alternatives, pick a pattern, or make a non-obvious choice:
 
 ```bash
-bd comment {BEAD_ID} "APPROACH: Used X instead of Y because Z"
+bd comment {BEAD_ID} "DECISION: [what you chose] instead of [alternative] because [reason]"
 ```
 
-When to log:
-- Deviated from the suggested fix
-- Multiple valid solutions, chose one for a specific reason
-- Future maintainers might question the approach
+Examples:
+- `DECISION: Used Strategy pattern instead of switch/case because the spec lists 5+ payment providers and more will be added`
+- `DECISION: Stored session in Redis instead of memory because the spec requires horizontal scaling`
+- `DECISION: Used batch insert instead of individual inserts because the dataset exceeds 1000 rows`
 
-Skip if the code is self-explanatory. This is not enforced.
+### Deviations
+
+When you implement something differently from what the spec/design doc defined — **always log why**:
+
+```bash
+bd comment {BEAD_ID} "DEVIATION: Spec said [X], implemented [Y] because [reason]"
+```
+
+Examples:
+- `DEVIATION: Spec said use REST endpoint, implemented WebSocket because the data requires real-time push`
+- `DEVIATION: Spec defined field as 'user_id: string', implemented as 'user_id: number' because the DB schema uses integer PKs`
+- `DEVIATION: Spec included pagination, deferred to separate task because it requires a new dependency`
+
+### When to log:
+- **DECISION**: Always log when multiple valid approaches exist and you picked one
+- **DEVIATION**: Always log when your implementation differs from the spec in any way
+- Skip if the choice is trivially obvious and self-explanatory from the code
 
 ---
 
@@ -116,7 +136,8 @@ Before marking the bead as in-review, you MUST leave a structured completion com
 bd comment {BEAD_ID} "COMPLETED:
 Summary: [1-2 sentences describing what was implemented/fixed]
 Files changed: [list of files modified, created, or deleted]
-Decisions: [any non-obvious choices made during implementation]
+Decisions: [count of DECISION comments logged, or 'none']
+Deviations: [count of DEVIATION comments logged, or 'none — implemented as spec']
 Tests: [what was tested and how — functional verification, unit tests, etc.]"
 ```
 
