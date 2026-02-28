@@ -57,6 +57,8 @@ This will:
         |
 /qa-task [bd-xxx]            QA validation: conformity, tests, build, lint
         |
+    Create PR                External reviews run (CodeRabbit, Copilot, etc.)
+        |
     User merges              You decide when it's ready
 ```
 
@@ -620,6 +622,30 @@ Shows beads with the `approved` label. Pick which one to QA.
 **If FAIL:**
 - Failures listed with severity
 - You decide: rework (back to `/start-task`), create follow-up bead, or override and merge anyway
+
+---
+
+### Handling External Review Feedback (CodeRabbit, Copilot, etc.)
+
+If you use external review services (CodeRabbit, GitHub Copilot, SonarQube, etc.) that leave comments on your PRs, the pipeline handles this naturally — no special skill needed.
+
+**The flow:**
+1. Your task passes the internal pipeline (`/review-task` → `/qa-task`)
+2. You create a PR from the branch
+3. The external service runs and leaves comments on the PR
+4. You read the comments and filter what's relevant
+5. You ask the orchestrator to apply the corrections:
+
+```
+"The CodeRabbit review on PR #42 for bead bd-001.2 flagged:
+  1. Missing error handling in parseConfig()
+  2. Variable should be const instead of let
+Can you fix these?"
+```
+
+The orchestrator reads the bead, resolves the correct supervisor, and dispatches with the external feedback as context.
+
+**Why no dedicated skill?** External review feedback varies widely in quality and relevance. The human filter is valuable here — you decide what's worth fixing, what's noise, and what's a follow-up task. The orchestrator (this Claude Code session) already has everything needed to dispatch corrections.
 
 ---
 
