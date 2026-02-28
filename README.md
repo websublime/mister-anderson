@@ -23,11 +23,19 @@ This is not multi-agent vibe coding. This is:
 
 ## Installation
 
+**Step 1 — Add the marketplace:**
+
 ```bash
-claude plugin add websublime/mister-anderson
+/plugin marketplace add websublime/mister-anderson
 ```
 
-Then run the setup skill in your project:
+**Step 2 — Install the plugin:**
+
+```bash
+/plugin install mister-anderson@websublime-mister-anderson
+```
+
+**Step 3 — Bootstrap your project:**
 
 ```
 /setup-project
@@ -346,31 +354,34 @@ The `-supervisor` suffix is the key — it triggers the PreToolUse hook that inj
 ## Quick Start
 
 ```bash
-# 1. Install the plugin
-claude plugin add websublime/mister-anderson
+# 1. Add the marketplace
+/plugin marketplace add websublime/mister-anderson
 
-# 2. In your project, run setup
+# 2. Install the plugin
+/plugin install mister-anderson@websublime-mister-anderson
+
+# 3. In your project, run setup
 /setup-project
 
-# 3. Define product requirements (PRD)
+# 4. Define product requirements (PRD)
 /product-requirements
 
-# 4. Design your solution from the PRD
+# 5. Design your solution from the PRD
 /architect-solution
 
-# 5. Create tasks from the design
+# 6. Create tasks from the design
 /beads-product-owner
 
-# 6. Start working on a task
+# 7. Start working on a task
 /start-task
 
-# 7. When implementation is done, review it
+# 8. When implementation is done, review it
 /review-task
 
-# 8. QA validation: conformity, tests, build, lint
+# 9. QA validation: conformity, tests, build, lint
 /qa-task
 
-# 9. Merge when satisfied
+# 10. Merge when satisfied
 ```
 
 ---
