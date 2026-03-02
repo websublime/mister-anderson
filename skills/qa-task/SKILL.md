@@ -72,7 +72,7 @@ After the QA agent completes:
 - Inform user: "QA passed. All checks green. The task is ready for merge."
 - Update labels:
   ```bash
-  bd label {BEAD_ID} qa-passed
+  bd label add {BEAD_ID} qa-passed
   ```
 - Ask user: "Do you want to close this bead?"
   - If yes: `bd close {BEAD_ID}`
@@ -87,9 +87,9 @@ After the QA agent completes:
 - Update labels based on user choice:
   ```bash
   # If rework:
-  bd label {BEAD_ID} --remove approved
-  bd label {BEAD_ID} needs-rework
+  bd label remove {BEAD_ID} approved
+  bd label add {BEAD_ID} needs-rework
 
   # If follow-up or override:
-  bd label {BEAD_ID} qa-override
+  bd label add {BEAD_ID} qa-override
   ```

@@ -23,9 +23,12 @@ Each task gets its own branch, keeping main clean and enabling human session wor
 
 ## Requirements
 
-- **beads CLI**: Installed automatically by bootstrap (via brew, npm, or go)
+- **beads CLI** (>= 0.56): Install from https://github.com/steveyegge/beads/tree/main
+- **Dolt SQL server**: beads 0.56+ requires a running Dolt sql-server (port 3307 or 3306)
 
-Test if `bd --version` works on terminal, if not stop all the setup process and tel user to install beads from here: https://github.com/steveyegge/beads/tree/main
+Test if `bd --version` works on terminal, if not stop all the setup process and tell user to install beads from here: https://github.com/steveyegge/beads/tree/main
+
+Also verify a Dolt sql-server is reachable (beads auto-detects on ports 3307/3306).
 
 ---
 
@@ -40,8 +43,8 @@ bd list 2>/dev/null && echo "BEADS_INITIALIZED" || echo "BEADS_NOT_INITIALIZED"
 ```
 
 **If `BEADS_NOT_INITIALIZED`:**
-- Init in bash: `bd init --branch beads-sync`
-- Config in bash: `bd config set routing.maintainer "."`
+- Init in bash: `bd init`
+- Config custom statuses: `bd config set status.custom "in-review"`
 
 **If `BEADS_INITIALIZED`:**
 - Beads ready to use, proceed to next check

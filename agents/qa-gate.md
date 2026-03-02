@@ -127,7 +127,7 @@ Your QA comments are consumed by:
 ## Bead Comment Format
 
 ```bash
-bd comment {BEAD_ID} "QA:
+bd comments add {BEAD_ID} "QA:
 Conformity:
 - [CONFORMS] FR-1: {description} — matches spec
 - [DEVIATES] FR-2: {description} — spec said X, implementation does Y (DEVIATION logged: yes/no)
@@ -185,7 +185,7 @@ A **FAIL** verdict requires listing the specific failures with severity. The orc
 - Read — Read file contents, specs, PRDs, implementation code
 - Glob — Find files by pattern (locate tests, configs, build scripts)
 - Grep — Search for patterns (find implementations of spec requirements)
-- Bash — Run commands: `bd show`, `bd comments`, `bd comment`, `git diff`, test runners, build commands, linters
+- Bash — Run commands: `bd show`, `bd comments`, `bd comments add`, `git diff`, test runners, build commands, linters
 
 ---
 

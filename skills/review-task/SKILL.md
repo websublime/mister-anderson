@@ -66,8 +66,8 @@ After the code-reviewer completes:
 - Inform user: "Code review passed. Ready for QA validation."
 - Update labels:
   ```bash
-  bd label {BEAD_ID} --remove needs-review
-  bd label {BEAD_ID} approved
+  bd label remove {BEAD_ID} needs-review
+  bd label add {BEAD_ID} approved
   ```
 - Recommend: "Run `/qa-task {BEAD_ID}` to validate spec conformity, tests, build, and lint before merging."
 
@@ -83,8 +83,8 @@ After the code-reviewer completes:
 - Inform: "This needs the implementation supervisor again — critical issues or acceptance criteria unmet. Use `/start-task {BEAD_ID}` to re-dispatch."
 - Update labels:
   ```bash
-  bd label {BEAD_ID} --remove needs-review
-  bd label {BEAD_ID} needs-rework
+  bd label remove {BEAD_ID} needs-review
+  bd label add {BEAD_ID} needs-rework
   ```
 - Do NOT dispatch refactoring-supervisor — this goes back to `/start-task`
 

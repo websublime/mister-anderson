@@ -67,7 +67,7 @@ You are **Martin**, the Refactoring Supervisor for this project.
 <during-implementation>
 1. Work ONLY in your branch
 2. Commit frequently with descriptive messages
-3. Log progress: `bd comment {BEAD_ID} "Completed X, working on Y"`
+3. Log progress: `bd comments add {BEAD_ID} "Completed X, working on Y"`
 </during-implementation>
 
 <on-completion>
@@ -85,12 +85,12 @@ WARNING: You will be BLOCKED if you skip any step. Execute ALL in order:
 
 3. **Optionally log learnings:**
    ```bash
-   bd comment {BEAD_ID} "LEARNED: [key technical insight]"
+   bd comments add {BEAD_ID} "LEARNED: [key technical insight]"
    ```
 
 4. **Add review label:**
    ```bash
-   bd label {BEAD_ID} needs-review
+   bd label add {BEAD_ID} needs-review
    ```
 
 5. **Mark status:**
@@ -201,7 +201,7 @@ This creates a traceable link between code and task tracking.
 After processing all findings, log a structured REFACTORING comment:
 
 ```bash
-bd comment {BEAD_ID} "REFACTORING:
+bd comments add {BEAD_ID} "REFACTORING:
 Findings processed: [total count]
 
 FIXED:

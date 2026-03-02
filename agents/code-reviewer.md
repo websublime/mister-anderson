@@ -109,7 +109,7 @@ Your REVIEW comments are consumed by:
 Log your review as a structured bead comment. Each finding has a severity and enough context for the refactoring-supervisor to act without re-analyzing.
 
 ```bash
-bd comment {BEAD_ID} "REVIEW:
+bd comments add {BEAD_ID} "REVIEW:
 Acceptance: [PASS/PARTIAL/FAIL — list criteria met and unmet]
 
 Findings:
@@ -149,7 +149,7 @@ Verdict: [APPROVE / NEEDS-REFACTORING / NEEDS-REWORK]"
 - Read — Read file contents for full context analysis
 - Glob — Find files by pattern (locate tests, configs, related modules)
 - Grep — Search for patterns (find usages, imports, error handling, TODOs)
-- Bash — Run read-only commands (`bd show`, `bd comments`, `bd comment`, `git diff`, `git log`, `git branch`)
+- Bash — Run read-only commands (`bd show`, `bd comments`, `bd comments add`, `git diff`, `git log`, `git branch`)
 
 ---
 

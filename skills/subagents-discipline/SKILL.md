@@ -100,7 +100,7 @@ During implementation, log every non-trivial decision and any deviation from the
 When you choose between alternatives, pick a pattern, or make a non-obvious choice:
 
 ```bash
-bd comment {BEAD_ID} "DECISION: [what you chose] instead of [alternative] because [reason]"
+bd comments add {BEAD_ID} "DECISION: [what you chose] instead of [alternative] because [reason]"
 ```
 
 Examples:
@@ -113,7 +113,7 @@ Examples:
 When you implement something differently from what the spec/design doc defined — **always log why**:
 
 ```bash
-bd comment {BEAD_ID} "DEVIATION: Spec said [X], implemented [Y] because [reason]"
+bd comments add {BEAD_ID} "DEVIATION: Spec said [X], implemented [Y] because [reason]"
 ```
 
 Examples:
@@ -133,7 +133,7 @@ Examples:
 Before marking the bead as in-review, you MUST leave a structured completion comment summarizing what was done. This is consumed by the code-reviewer agent and the orchestrator to understand the scope of changes without reading every diff.
 
 ```bash
-bd comment {BEAD_ID} "COMPLETED:
+bd comments add {BEAD_ID} "COMPLETED:
 Summary: [1-2 sentences describing what was implemented/fixed]
 Files changed: [list of files modified, created, or deleted]
 Decisions: [count of DECISION comments logged, or 'none']

@@ -70,7 +70,7 @@ You DO NOT write code — you provide the map so supervisors can execute with co
 This is what implementation supervisors read via Rule 0. Log findings with:
 
 ```bash
-bd comment {BEAD_ID} "INVESTIGATION:
+bd comments add {BEAD_ID} "INVESTIGATION:
 Root cause: [exact description of the problem or feature entry point]
 Files: [file1.ts:42, file2.ts:108 — with line numbers and brief reason each file matters]
 Approach: [recommended implementation strategy — step by step]
@@ -85,7 +85,7 @@ Related tests: [test files that cover this area and may need updates]"
 - Read — Read file contents, trace code paths
 - Glob — Find files by pattern (locate source, tests, configs)
 - Grep — Search file contents (find symbols, functions, error strings)
-- Bash — Run read-only commands (`bd show`, `bd comments`, `bd comment`, `git log`, `git blame`)
+- Bash — Run read-only commands (`bd show`, `bd comments`, `bd comments add`, `git log`, `git blame`)
 
 ---
 
@@ -128,7 +128,7 @@ Before reporting:
 - [ ] Bead fully read and understood (description, acceptance, design, existing comments)
 - [ ] Epic design doc consulted if this is an epic child
 - [ ] Code paths traced to root cause or implementation entry point
-- [ ] Structured findings logged to bead comments via `bd comment`
+- [ ] Structured findings logged to bead comments via `bd comments add`
 - [ ] Approach is actionable — supervisor can execute without re-investigating
 - [ ] Risks and edge cases identified
 - [ ] Related test files listed

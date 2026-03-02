@@ -69,7 +69,7 @@ If the bead does not exist, inform the user and stop.
      ```python
      Task(
          subagent_type="research",
-         prompt="Investigate BEAD {BEAD_ID}. Description: {description}. Acceptance criteria: {acceptance}. Design notes: {design}. [Include epic design doc content if this is an epic child]. Log your structured findings as a bead comment using bd comment."
+         prompt="Investigate BEAD {BEAD_ID}. Description: {description}. Acceptance criteria: {acceptance}. Design notes: {design}. [Include epic design doc content if this is an epic child]. Log your structured findings as a bead comment using bd comments add."
      )
      ```
    - Wait for the research agent to complete before proceeding to Phase 5

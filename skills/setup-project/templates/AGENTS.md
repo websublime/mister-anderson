@@ -13,7 +13,7 @@ Check compatibility:
 ### Why bd?
 
 - Dependency-aware: Track blockers and relationships between issues
-- Git-friendly: Auto-syncs to JSONL for version control
+- Database-backed: Dolt (MySQL protocol) with version history
 - Agent-optimized: JSON output, ready work detection, discovered-from links
 - Prevents duplicate tracking systems and confusion
 
@@ -40,7 +40,7 @@ bd update bd-42 --priority 1 --json
 
 **Complete work:**
 ```bash
-bd close bd-42 --reason "Completed" --json
+bd close bd-42 --json
 ```
 
 ### Issue Types
@@ -66,14 +66,14 @@ bd close bd-42 --reason "Completed" --json
 3. **Work on it**: Implement, test, document
 4. **Discover new work?** Create linked issue:
    - `bd create "Found bug" -p 1 --deps discovered-from:<parent-id>`
-5. **Commit together**: Always commit the `.beads/issues.jsonl` file together with the code changes so issue state stays in sync with code state
+5. **Finish work**: Close completed issues with `bd close <id>`
 
-### Auto-Sync
+### Storage
 
-bd automatically syncs with git:
-- Exports to `.beads/issues.jsonl` after changes (5s debounce)
-- Imports from JSONL when newer (e.g., after `git pull`)
-- No manual export/import needed!
+bd uses Dolt (MySQL protocol) as its database backend:
+- Data stored in `.beads/*.db` with full version history
+- Use `bd dolt push` / `bd dolt pull` to sync with remote
+- No manual JSONL export needed — Dolt handles versioning
 
 ### GitHub Copilot Integration
 
@@ -164,7 +164,7 @@ For more details, see README.md and QUICKSTART.md.
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
+   bd dolt push
    git push
    git status  # MUST show "up to date with origin"
    ```
