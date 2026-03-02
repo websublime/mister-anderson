@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "mister-anderson",
-      "source": ".",
+      "source": "./",
       "description": "Beads development for humans — a structured, human-controlled development pipeline with task tracking, code review gates, and multi-agent orchestration",
       "version": "0.0.1",
       "author": {
