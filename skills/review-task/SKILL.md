@@ -48,7 +48,7 @@ Dispatch the code-reviewer agent to analyze the implementation:
 ```python
 Task(
     subagent_type="code-reviewer",
-    prompt="Review BEAD {BEAD_ID}. Description: {description}. Acceptance criteria: {acceptance}. Design notes: {design}. Branch: {branch-name}. Read the COMPLETED comment in bead comments for implementation summary. Analyze the branch diff against acceptance criteria and log a structured REVIEW comment to the bead."
+    prompt="Review BEAD {BEAD_ID} on branch {branch-name}. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, and the COMPLETED comment from the supervisor. Analyze the branch diff against acceptance criteria and log a structured REVIEW comment to the bead."
 )
 ```
 

@@ -54,7 +54,7 @@ Dispatch the QA agent to validate the implementation:
 ```python
 Task(
     subagent_type="qa-gate",
-    prompt="QA validate BEAD {BEAD_ID}. Description: {description}. Acceptance criteria: {acceptance}. Design notes: {design}. Spec path: {spec_path}. PRD path: {prd_path}. Branch: {branch-name}. Read all bead comments for COMPLETED, DECISION, DEVIATION, and REVIEW context. Run tests, build, and lint. Log a structured QA comment to the bead."
+    prompt="QA validate BEAD {BEAD_ID} on branch {branch-name}. Spec: {spec_path}. PRD: {prd_path}. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, COMPLETED, DECISION, DEVIATION, and REVIEW comments. Run tests, build, and lint. Log a structured QA comment to the bead."
 )
 ```
 

@@ -103,5 +103,6 @@ The SubagentStop hook verifies: branch exists, no uncommitted changes, pushed to
 - Implementing without BEAD_ID
 - Merging your own branch (user merges via PR)
 - Editing files outside your project
+- Closing or completing beads — your job ends at `in-review`. The user decides when to close after review/QA gates pass.
 </banned>
 </beads-workflow>

@@ -69,7 +69,7 @@ If the bead does not exist, inform the user and stop.
      ```python
      Task(
          subagent_type="research",
-         prompt="Investigate BEAD {BEAD_ID}. Description: {description}. Acceptance criteria: {acceptance}. Design notes: {design}. [Include epic design doc content if this is an epic child]. Log your structured findings as a bead comment using bd comments add."
+         prompt="Investigate BEAD {BEAD_ID}. [Include EPIC_ID if epic child]. Read the bead (bd show {BEAD_ID}) for full context — description, acceptance criteria, and design notes. Log your structured findings as a bead comment using bd comments add."
      )
      ```
    - Wait for the research agent to complete before proceeding to Phase 5
@@ -108,7 +108,7 @@ git branch -a | grep {BEAD_ID}
    ```python
    Task(
        subagent_type="{resolved-supervisor}",
-       prompt="Implement BEAD {BEAD_ID}. Description: {description}. Acceptance: {acceptance}. Design: {design}. Read bead comments (bd comments {BEAD_ID}) for investigation context before starting implementation."
+       prompt="Implement BEAD {BEAD_ID}. [Include EPIC_ID if epic child]. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, and investigation findings."
    )
    ```
 

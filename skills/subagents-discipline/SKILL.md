@@ -155,6 +155,14 @@ If your BEAD_ID contains a dot (e.g., BD-001.2), you're implementing part of a l
 
 ---
 
+## Rule 6: Never Close Beads
+
+Your job ends at `in-review`. After pushing and marking the bead `in-review` with `needs-review` label, **stop**. Do NOT run `bd close`.
+
+Closing beads is the user's decision after review and QA gates pass. This is non-negotiable.
+
+---
+
 ## Red Flags - Stop and Verify
 
 When you catch yourself thinking:
