@@ -80,7 +80,7 @@ This will:
     |
     Phase 1: Resolve bead ID (or show ready tasks)
     Phase 2: Read full context (description, acceptance, design, epic docs)
-    Phase 3: Resolve supervisor from notes field
+    Phase 3: Resolve supervisor from assignee field
     Phase 4: Investigation check
        |
        No investigation found?
@@ -192,13 +192,13 @@ Need a supervisor that doesn't exist? Run `/add-supervisor {tech}`.
 
 ### Task Routing
 
-When Fernando (beads-owner) creates a task, he adds a `supervisor:` field in the notes:
+When Fernando (beads-owner) creates a task, he sets the supervisor as the assignee:
 
-```
-supervisor: rust-supervisor
+```bash
+bd create "Fix parser bug" --assignee rust-supervisor --spec-id "PRD 9.14" --external-ref "ARCH 6 | PLAN 3" ...
 ```
 
-The `/start-task` skill reads this field and dispatches the correct supervisor automatically. If the supervisor doesn't exist, it suggests `/add-supervisor`.
+The `/start-task` skill reads the `assignee` field and dispatches the correct supervisor automatically. If the supervisor doesn't exist, it suggests `/add-supervisor`.
 
 ### Investigation Before Implementation
 
@@ -476,7 +476,9 @@ Once you have a design, Fernando (beads-owner) breaks it down into epics and tas
 Fernando creates epics and child tasks. Each task includes:
 - Clear description tied to the design
 - Acceptance criteria (what "done" means)
-- A `supervisor:` routing field in notes pointing to the correct implementation supervisor
+- The `--assignee` field set to the correct implementation supervisor
+- The `--spec-id` pointing to the main PRD document
+- The `--external-ref` for additional references (architecture specs, plans, etc.)
 - Priority and dependency information
 
 **For individual well-defined issues:**
@@ -490,7 +492,7 @@ Use this when you already know exactly what needs to be done and don't need the 
 ```bash
 bd show bd-001.1 --json
 ```
-Check that the `notes` field contains `supervisor: {name}-supervisor` and that the referenced supervisor exists in `.claude/agents/`.
+Check that the `assignee` field contains `{name}-supervisor` and that the referenced supervisor exists in `.claude/agents/`.
 
 ---
 
@@ -512,7 +514,7 @@ Shows all unblocked tasks from `bd ready` with ID, title, priority, and labels. 
 **What happens step by step:**
 1. **Resolve** — Validates the bead exists and reads full context (description, acceptance, design, notes)
 2. **Epic context** — If this is an epic child (e.g., `bd-001.2`), reads the parent epic's design doc as the implementation contract
-3. **Supervisor routing** — Reads the `supervisor:` field from notes, verifies the agent file exists in `.claude/agents/`
+3. **Supervisor routing** — Reads the `assignee` field from the bead, verifies the agent file exists in `.claude/agents/`
 4. **Investigation** — Checks if Sherlock has already investigated (looks for `INVESTIGATION:` in bead comments). If not, asks if you want to dispatch research first
 5. **Branch check** — Detects if a branch already exists (from a previous NEEDS-REWORK cycle) and asks whether to continue on it or start fresh
 6. **Dispatch** — Sends the task to the resolved supervisor with full context. The PreToolUse hook automatically injects engineering discipline (Rules 0-5)
@@ -667,7 +669,7 @@ The orchestrator reads the bead, resolves the correct supervisor, and dispatches
 
 When you add a new technology to your project after the initial setup — for example, a new Rust service in a monorepo that previously only had Node.js — the needed supervisor won't exist yet.
 
-**Scenario:** You run `/start-task` and the `supervisor: rust-supervisor` field points to an agent that doesn't exist. The skill warns you and suggests creating one.
+**Scenario:** You run `/start-task` and the `assignee: rust-supervisor` field points to an agent that doesn't exist. The skill warns you and suggests creating one.
 
 ```
 /add-supervisor rust
@@ -683,7 +685,7 @@ When you add a new technology to your project after the initial setup — for ex
 ```
 /start-task bd-001.2
 ```
-Now the `supervisor: rust-supervisor` routing resolves correctly.
+Now the `assignee: rust-supervisor` routing resolves correctly.
 
 **Supported technologies:** Node.js, Python, Go, Rust, React, Vue, Svelte, Angular, Docker/CI/Terraform, Flutter, iOS, Android, Blockchain/Web3, ML/AI. If your technology isn't in the list, `/add-supervisor` will attempt to create one — Discovery handles the mapping.
 
@@ -700,7 +702,8 @@ Sometimes you need to create a single, well-defined issue without the full epic 
 Fernando (beads-owner) creates the issue with:
 - Description of what needs to be done
 - Acceptance criteria
-- The `supervisor:` routing field in notes
+- The `--assignee` set to the implementation supervisor
+- The `--spec-id` pointing to the main PRD and `--external-ref` for other references
 - Priority and any relevant labels
 
 This is useful when you already know exactly what the task is and don't need architectural decomposition.

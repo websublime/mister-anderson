@@ -178,10 +178,15 @@ cp ./agents/beads-owner.md ./.claude/agents/
 
 ---
 
-## Step 7: Delete Setup Skills
+## Step 7: Offer to Remove Setup Skill
 
-Delete setup skills directory from .claude/skills/setup-project.
+The setup is complete. Inform the user:
 
+> "Setup is done! The `/setup-project` skill is typically only needed once per project. Do you want me to remove it from `.claude/skills/setup-project` to keep things clean? You can always re-run setup from the mister-anderson source if needed."
+
+**If user agrees:**
 ```bash
-rm -rf ./claude/skills/setup-project
+rm -rf ./.claude/skills/setup-project
 ```
+
+**If user declines:** leave it in place, no further action needed.

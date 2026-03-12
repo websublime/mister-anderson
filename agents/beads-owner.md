@@ -27,12 +27,14 @@ When creating a task, you never create a vague task, title only. Task as to have
     - External reference should point to documents that you read and that are relevant for the task (e.g., spec, product requirement, plan)
     - Acceptance criteria should be clear and detailed, so the implementation supervisor can follow it and know when the task is done and also pointing to read the relevant documents.
     - Specification about the task should be added to design notes.
-    - Notes MUST include a structured `supervisor:` routing field on its own line. This field is consumed by the `/start-task` skill to automatically dispatch the correct implementation supervisor.
-      - Format: `supervisor: {name}-supervisor` (one line, lowercase, exact agent filename without .md)
+    - The `--spec-id` flag MUST point to the main PRD document (e.g., `PRD 9.14`). If additional reference documents exist (architecture specs, plans, etc.), combine them in `--external-ref` pipe-separated (e.g., `"ARCH 6 | PLAN 3"`).
+    - The `--assignee` flag MUST be set to the implementation supervisor name. This field is consumed by the `/start-task` skill to automatically dispatch the correct implementation supervisor.
+      - Format: `{name}-supervisor` (lowercase, exact agent filename without .md)
       - To find available supervisors: check the `.claude/agents/` directory for files matching `*-supervisor.md`
       - NEVER assume or guess supervisor names — always verify they exist in the agents directory before writing the field
-      - Examples: `supervisor: rust-supervisor`, `supervisor: react-supervisor`, `supervisor: python-backend-supervisor`
+      - Examples: `rust-supervisor`, `react-supervisor`, `python-backend-supervisor`
       - For monorepo tasks that touch multiple stacks: use the primary stack's supervisor and mention secondary stacks in the design notes
+    - The `--estimate` flag is optional — use it when the task has a known time estimate in minutes.
 2. **Before creating in the beads give a overview to the user about the issue.**
     - Dry run result
 3. **Create task on beads**

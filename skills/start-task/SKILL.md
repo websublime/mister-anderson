@@ -1,6 +1,6 @@
 ---
 name: start-task
-description: Dynamic task routing — resolves bead ID, discovers the correct implementation supervisor from notes, runs codebase investigation if needed, and dispatches the supervisor with full context. Handles the complete orchestration cycle from task selection to supervisor dispatch.
+description: Dynamic task routing — resolves bead ID, discovers the correct implementation supervisor from the assignee field, runs codebase investigation if needed, and dispatches the supervisor with full context. Handles the complete orchestration cycle from task selection to supervisor dispatch.
 user_invocable: true
 ---
 
@@ -43,12 +43,12 @@ If the bead does not exist, inform the user and stop.
 
 ## Phase 3: Resolve Supervisor
 
-1. Parse the `notes` field from the bead — look for a line matching `supervisor: {name}` (case-insensitive, trimmed)
-2. **If `supervisor:` field found:**
-   - Verify the agent file exists: check for `.claude/agents/{name}.md`
+1. Read the `assignee` field from the bead JSON — this contains the supervisor name (e.g., `rust-supervisor`)
+2. **If `assignee` field is set and non-empty:**
+   - Verify the agent file exists: check for `.claude/agents/{assignee}.md`
    - If file exists → supervisor resolved, proceed to Phase 4
    - If file NOT found → warn user that the specified supervisor does not exist, fall through to manual selection
-3. **If `supervisor:` field NOT found** in notes, or the specified agent file does not exist:
+3. **If `assignee` field is empty or unset:**
    - List available implementation supervisors: find all `*-supervisor.md` files in `.claude/agents/`
    - Present the list to the user with agent names (without `.md` suffix)
    - Inform: "If the supervisor you need is not listed, you can create one with `/add-supervisor {technology}`."
