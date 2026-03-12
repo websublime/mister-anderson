@@ -19,10 +19,10 @@ This is not multi-agent vibe coding. This is:
 ## Requirements
 
 - [Claude Code](https://claude.com/claude-code)
-- [beads CLI](https://github.com/steveyegge/beads) >= 0.56 (`bd` command)
-- [Dolt](https://github.com/dolthub/dolt) sql-server running (port 3307 or 3306) — required by beads 0.56+
+- [beads CLI](https://github.com/steveyegge/beads) >= 0.60 (`bd` command)
+- [Dolt](https://github.com/dolthub/dolt) sql-server running (port 3307 or 3306) — required by beads
 
-> **Compatibility note:** This version of mister-anderson targets **beads >= 0.56** which uses Dolt (MySQL protocol) as its database backend. If you are running an older version of beads (0.4.x with SQLite/JSONL), please update beads first: `curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash`
+> **Compatibility note:** This version of mister-anderson targets **beads >= 0.60** which uses Dolt (MySQL protocol) as its database backend. If you are running an older version of beads, please update: `curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash`
 
 ## Installation
 
@@ -768,15 +768,16 @@ The principle: **you decide when it's ready, not the AI.**
 
 ## Beads Compatibility
 
-This plugin is tested with **beads >= 0.56** (Dolt backend). Key differences from earlier versions:
+This plugin is tested with **beads >= 0.60** (Dolt backend). Key differences from earlier versions:
 
-| Command | Old (beads 0.4) | Current (beads 0.56+) |
+| Command | Old (beads 0.4) | Current (beads 0.60+) |
 |---------|-----------------|----------------------|
 | Init | `bd init --branch beads-sync` | `bd init` |
 | Add comment | `bd comment {ID} "text"` | `bd comments add {ID} "text"` |
 | Add label | `bd label {ID} {label}` | `bd label add {ID} {label}` |
 | Remove label | `bd label {ID} --remove {label}` | `bd label remove {ID} {label}` |
-| Sync | `bd sync` | `bd dolt push` / `bd dolt pull` |
+| Sync | `bd sync` (removed) | `bd dolt push` / `bd dolt pull` |
+| Onboard | `bd onboard` (deprecated) | `bd prime` |
 | Storage | SQLite + JSONL auto-sync | Dolt (MySQL protocol) |
 
 ---

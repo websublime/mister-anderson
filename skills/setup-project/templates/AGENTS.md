@@ -78,7 +78,7 @@ bd uses Dolt (MySQL protocol) as its database backend:
 ### GitHub Copilot Integration
 
 If using GitHub Copilot, also create `.github/copilot-instructions.md` for automatic instruction loading.
-Run `bd onboard` to get the content, or see step 2 of the onboard instructions.
+Run `bd prime` to get the content, or see step 2 of the onboard instructions.
 
 ### MCP Server (Recommended)
 
