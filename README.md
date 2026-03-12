@@ -139,6 +139,7 @@ User-invocable commands that orchestrate the workflow.
 | **review-task** | `/review-task [bead-id]` | Code review gate with optional refactoring dispatch |
 | **qa-task** | `/qa-task [bead-id]` | QA finalization: spec conformity, tests, build, lint |
 | **add-supervisor** | `/add-supervisor [tech]` | Create a new supervisor for a specific technology |
+| **migrate-beads** | `/migrate-beads` | Migrate existing beads to updated field conventions (e.g., supervisor→assignee) |
 
 ### Internal Skills
 
@@ -707,6 +708,24 @@ Fernando (beads-owner) creates the issue with:
 - Priority and any relevant labels
 
 This is useful when you already know exactly what the task is and don't need architectural decomposition.
+
+---
+
+### Migrating Existing Beads After Plugin Updates
+
+When field conventions change (like moving supervisor routing from notes to assignee), existing beads in active projects need updating. The migrate skill handles this in bulk.
+
+```
+/migrate-beads
+```
+
+**What happens:**
+1. **Discover** — Fetches all open, in-progress, and in-review beads
+2. **Analyze** — Checks each bead against migration rules (e.g., supervisor still in notes instead of assignee, references in notes instead of spec-id/external-ref)
+3. **Preview** — Shows a dry run of all proposed changes per bead
+4. **Apply** — Updates beads with `bd update` after user confirmation
+
+Rules are idempotent — beads that already match current conventions are skipped. When future field conventions change, new rules are added to the skill and old ones naturally become no-ops.
 
 ---
 
