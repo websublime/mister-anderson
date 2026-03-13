@@ -104,7 +104,12 @@ git branch -a | grep {BEAD_ID}
    - Reference to investigation: "Read bead comments (bd comments {BEAD_ID}) for investigation context before starting implementation."
    - Epic design doc reference if applicable
 
-2. Dispatch the resolved supervisor:
+2. **Announce the dispatch to the user before calling Task():**
+   ```
+   Dispatching {resolved-supervisor} for {BEAD_ID}: "{bead title}"
+   ```
+
+3. Dispatch the resolved supervisor:
    ```python
    Task(
        subagent_type="{resolved-supervisor}",
@@ -112,4 +117,4 @@ git branch -a | grep {BEAD_ID}
    )
    ```
 
-3. The `PreToolUse` hook automatically injects the discipline reminder because the agent name ends in `-supervisor`.
+4. The `PreToolUse` hook automatically injects the discipline reminder because the agent name ends in `-supervisor`.
