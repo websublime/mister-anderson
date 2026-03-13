@@ -295,6 +295,8 @@ If the verdict is `NEEDS-REFACTORING`, **Martin** (refactoring-supervisor) doesn
 4. **If real** — applies the fix with tests
 5. **If risky** — skips and logs why
 
+After Martin completes, any **SKIPPED** findings are automatically tracked as issues under the Review Findings epic (same flow as review findings). **DEFERRED** items are already linked to existing beads and don't create duplicates.
+
 ### Comment Trail
 
 Every bead accumulates a structured history:
