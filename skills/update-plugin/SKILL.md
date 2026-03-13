@@ -1,29 +1,35 @@
 ---
 name: update-plugin
-description: Update mister-anderson plugin files to the latest version without losing user customizations.
+description: Update mister-anderson plugin and clean up legacy local copies that are now provided by the plugin system.
 user-invocable: true
 ---
 
 # Update Plugin
 
-Update mister-anderson core files (agents, skills, hooks) to the latest version while preserving user customizations.
+Update the mister-anderson plugin and clean up legacy local copies from older versions.
+
+Since v0.1.0, the plugin system provides skills, core agents, and hooks automatically. This skill handles:
+1. Updating the marketplace cache to the latest version
+2. Cleaning up legacy local copies that cause duplicate commands
+3. Optionally re-running Discovery to refresh dynamic supervisors
 
 ---
 
-## What Gets Updated vs Preserved
+## What the Plugin Provides vs What Stays Local
 
-### Updated (overwritten with latest)
-- **Core agents** (`architect.md`, `product-manager.md`, `research.md`, `discovery.md`, `code-reviewer.md`, `qa-gate.md`, `refactoring-supervisor.md`, `beads-owner.md`)
-- **Skills** (all directories under `.claude/skills/`)
-- **Hooks** (`hooks.json`, `session-start.sh`, `inject-discipline-reminder.sh`)
+### Provided by Plugin (no local copy needed)
+- **Skills** — all workflow commands
+- **Core agents** — architect, product-manager, research, discovery, code-reviewer, qa-gate, refactoring-supervisor, beads-owner
+- **Hooks** — session-start dashboard, discipline injection
 
-### Preserved (never touched)
+### Local to Project (never touched by update)
 - **CLAUDE.md** — project-specific orchestrator config
 - **AGENTS.md** — project-specific workflow docs
 - **BEADS-WORKFLOW.md** — project-specific workflow docs
-- **Dynamic supervisors** — any `*-supervisor.md` agents **except** `refactoring-supervisor.md` (which is a core agent)
+- **Dynamic supervisors** — `*-supervisor.md` in `.claude/agents/` created by Discovery (project-specific)
 - **Beads database** (`.beads/`)
 - **Project settings** (`.claude/settings.json`, `.claude/settings.local.json`)
+- **Version file** (`.claude/.mister-anderson-version`)
 
 ---
 
@@ -38,120 +44,88 @@ echo "Installed version: ${LOCAL_VERSION:-unknown}"
 
 Read the plugin source `plugin.json` to get the available version:
 ```bash
-# The plugin source plugin.json has the latest version
-cat <PLUGIN_SOURCE_DIR>/.claude-plugin/plugin.json
+cat ${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json
 ```
 
-> The plugin source directory is where this skill file lives — resolve relative to this SKILL.md's location (go up two levels from `skills/update-plugin/`).
-
-**If versions match:** Inform user they are already up to date. Stop.
+**If versions match:** Inform user they are already up to date. Proceed to Phase 2 anyway to check for legacy cleanup.
 
 **If local version is unknown:** Warn that this project may not have been set up with `/setup-project`. Ask user if they want to proceed anyway.
 
 ---
 
-## Phase 2: Diff Preview
+## Phase 2: Detect Legacy Local Copies
 
-Before applying any changes, show the user what will be updated.
+Check if the project has legacy local copies from older plugin versions (pre-0.1.0):
 
-1. **List core agents** that will be overwritten:
-   ```bash
-   ls .claude/agents/{architect,product-manager,research,discovery,code-reviewer,qa-gate,refactoring-supervisor,beads-owner}.md 2>/dev/null
-   ```
+```bash
+# Check for legacy local skills
+LEGACY_SKILLS=$(ls -d .claude/skills/*/ 2>/dev/null | wc -l | tr -d '[:space:]')
 
-2. **List skills** that will be overwritten:
-   ```bash
-   ls -d .claude/skills/*/ 2>/dev/null
-   ```
+# Check for legacy local hooks
+LEGACY_HOOKS=$(ls .claude/hooks/ 2>/dev/null | wc -l | tr -d '[:space:]')
 
-3. **List dynamic supervisors** that will be PRESERVED:
-   ```bash
-   # All *-supervisor.md EXCEPT refactoring-supervisor.md
-   ls .claude/agents/*-supervisor.md 2>/dev/null | grep -v refactoring-supervisor.md
-   ```
+# Check for legacy core agents (NOT dynamic supervisors)
+LEGACY_AGENTS=0
+CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate beads-owner refactoring-supervisor)
+for agent in "${CORE_AGENTS[@]}"; do
+  [[ -f ".claude/agents/${agent}.md" ]] && LEGACY_AGENTS=$((LEGACY_AGENTS + 1))
+done
 
-4. **List hooks** that will be updated:
-   ```bash
-   ls .claude/hooks/ 2>/dev/null
-   ```
-
-5. **Show new/removed files** — compare skill directories between source and installed:
-   ```bash
-   # New skills in source not in installed
-   diff <(ls <PLUGIN_SOURCE_DIR>/skills/) <(ls .claude/skills/) 2>/dev/null
-   ```
-
-Present a summary:
+echo "Legacy skills: $LEGACY_SKILLS"
+echo "Legacy hooks: $LEGACY_HOOKS"
+echo "Legacy core agents: $LEGACY_AGENTS"
 ```
-Update mister-anderson: {LOCAL_VERSION} → {NEW_VERSION}
 
-Will UPDATE:
-  - 8 core agents
-  - {N} skills
-  - Hook scripts
+**List dynamic supervisors** that will be PRESERVED:
+```bash
+# All *-supervisor.md EXCEPT refactoring-supervisor.md (core agent)
+ls .claude/agents/*-supervisor.md 2>/dev/null | grep -v refactoring-supervisor.md
+```
+
+**If no legacy files found:** Inform user the project is clean. Skip to Phase 4.
+
+**If legacy files found:** Present summary and proceed to Phase 3.
+
+```
+Legacy cleanup needed:
+  - {LEGACY_SKILLS} local skill directories (duplicates of plugin-provided skills)
+  - {LEGACY_HOOKS} local hook files (duplicates of plugin-provided hooks)
+  - {LEGACY_AGENTS} local core agent files (duplicates of plugin-provided agents)
 
 Will PRESERVE:
   - CLAUDE.md, AGENTS.md, BEADS-WORKFLOW.md
   - {N} dynamic supervisors: {list names}
   - .beads/ database
   - Project settings
-
-New in this version:
-  - {list any new skills or agents}
-
-Removed in this version:
-  - {list any removed skills or agents}
 ```
 
 **Ask user for confirmation before proceeding.**
 
 ---
 
-## Phase 3: Apply Update
+## Phase 3: Cleanup Legacy Local Copies
 
 After user confirms:
 
-### 3.1 Update core agents
+### 3.1 Remove legacy local skills
 ```bash
-PLUGIN_SRC="<PLUGIN_SOURCE_DIR>"
-CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate refactoring-supervisor beads-owner)
+rm -rf .claude/skills/
+```
+
+### 3.2 Remove legacy local hooks
+```bash
+rm -rf .claude/hooks/
+```
+
+### 3.3 Remove legacy core agents (preserve dynamic supervisors)
+```bash
+CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate beads-owner refactoring-supervisor)
 for agent in "${CORE_AGENTS[@]}"; do
-  cp "$PLUGIN_SRC/agents/${agent}.md" ./.claude/agents/
+  rm -f ".claude/agents/${agent}.md"
 done
 ```
 
-### 3.2 Update skills
-```bash
-# Remove old skills (except setup-project if it was already removed)
-# Then copy fresh from source
-rm -rf ./.claude/skills/add-supervisor
-rm -rf ./.claude/skills/architect-solution
-rm -rf ./.claude/skills/beads-product-owner
-rm -rf ./.claude/skills/create-bead-issues
-rm -rf ./.claude/skills/migrate-beads
-rm -rf ./.claude/skills/product-requirements
-rm -rf ./.claude/skills/qa-task
-rm -rf ./.claude/skills/review-task
-rm -rf ./.claude/skills/start-task
-rm -rf ./.claude/skills/subagents-discipline
-rm -rf ./.claude/skills/update-plugin
-
-cp -r "$PLUGIN_SRC/skills/"* ./.claude/skills/
-```
-
-> **Note:** The `setup-project` skill is only copied if it doesn't already exist (it may have been removed in Step 8 of setup). If user previously removed it, respect that choice:
-> ```bash
-> if [[ ! -d "./.claude/skills/setup-project" ]]; then
->   rm -rf ./.claude/skills/setup-project
-> fi
-> ```
-
-### 3.3 Update hooks
-```bash
-cp "$PLUGIN_SRC/hooks/hooks.json" ./.claude/hooks/
-cp "$PLUGIN_SRC/hooks/session-start.sh" ./.claude/hooks/
-cp "$PLUGIN_SRC/hooks/inject-discipline-reminder.sh" ./.claude/hooks/
-```
+**Important:** Do NOT remove `*-supervisor.md` files created by Discovery — only remove the 8 core agents listed above.
 
 ### 3.4 Update version file
 ```bash
@@ -162,41 +136,41 @@ echo "{NEW_VERSION}" > ./.claude/.mister-anderson-version
 
 ## Phase 4: Post-Update Verification
 
-1. **Verify files were copied:**
+1. **Verify dynamic supervisors are intact:**
    ```bash
-   ls .claude/agents/{architect,product-manager,research,discovery,code-reviewer,qa-gate,refactoring-supervisor,beads-owner}.md
-   ls .claude/hooks/{hooks.json,session-start.sh,inject-discipline-reminder.sh}
-   cat .claude/.mister-anderson-version
+   ls .claude/agents/*-supervisor.md 2>/dev/null | grep -v refactoring-supervisor.md
    ```
 
-2. **Check dynamic supervisors are intact:**
+2. **Verify no legacy duplicates remain:**
    ```bash
-   ls .claude/agents/*-supervisor.md | grep -v refactoring-supervisor.md
+   ls -d .claude/skills/*/ 2>/dev/null && echo "WARNING: Local skills still exist" || echo "OK: No local skills"
+   ls .claude/hooks/ 2>/dev/null && echo "WARNING: Local hooks still exist" || echo "OK: No local hooks"
    ```
 
 3. **Report result:**
    ```
-   ✅ mister-anderson updated to {NEW_VERSION}
+   mister-anderson updated to {NEW_VERSION}
 
-   Updated: 8 core agents, {N} skills, hook scripts
+   Cleaned up: {N} local skills, {N} local hooks, {N} core agents
    Preserved: {N} dynamic supervisors, CLAUDE.md, AGENTS.md
 
-   Tip: If your tech stack changed, run /add-supervisor to create new supervisors.
+   Skills, core agents, and hooks are now provided by the plugin system.
+   Dynamic supervisors remain in .claude/agents/.
    ```
 
 ---
 
 ## Phase 5: Optional — Re-run Discovery
 
-If the new version includes changes to supervisor templates or the discovery agent, offer:
+Offer to refresh dynamic supervisors:
 
-> "The discovery agent template was updated in this version. Do you want to re-run discovery to refresh your dynamic supervisors? This will NOT delete existing ones — only create missing ones or update the template."
+> "Do you want to re-run discovery to refresh your dynamic supervisors? This will NOT delete existing ones — only create missing ones or update the template."
 
 **If user agrees**, dispatch using **exactly** these parameters — no more, no less:
 ```python
 Task(
     subagent_type="discovery",
-    prompt="Detect tech stack and create/update supervisors for this project. Do NOT delete existing supervisors."
+    prompt="Detect tech stack and create/update supervisors for this project. Do NOT delete existing supervisors. Write supervisor files to .claude/agents/."
 )
 ```
 **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.

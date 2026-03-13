@@ -13,11 +13,20 @@ Set up lightweight multi-agent orchestration with git-native task tracking for C
 This skill bootstraps a complete workflow where:
 
 - **Orchestrator** (you) investigates issues, manages tasks, delegates implementation
-- **Supervisors** (specialized agents) execute fixes in isolated worktrees
+- **Supervisors** (specialized agents) execute implementation on feature branches
 - **Beads CLI** tracks all work with git-native task management
-- **Hooks** enforce workflow discipline automatically
+- **Hooks** enforce workflow discipline automatically (provided by the plugin)
 
 Each task gets its own branch, keeping main clean and enabling human session work.
+
+## What the Plugin Already Provides
+
+The mister-anderson plugin (installed via Claude Code plugin system) automatically provides:
+- **Skills** — all workflow commands (`/start-task`, `/review-task`, etc.)
+- **Core agents** — architect, product-manager, research, code-reviewer, qa-gate, beads-owner, refactoring-supervisor, discovery
+- **Hooks** — session-start dashboard, discipline injection for supervisors
+
+**This setup skill only creates project-specific files that the plugin cannot provide.**
 
 ---
 
@@ -88,9 +97,9 @@ Go thru the project and try to detect type of tech:
 
 ---
 
-## Step 2: Create and copy CLAUDE.md
+## Step 2: Create CLAUDE.md
 
-Use the template at `./skills/setup-project/templates/CLAUDE.md` and update sections with previous information.
+Use the template at `${CLAUDE_PLUGIN_ROOT}/skills/setup-project/templates/CLAUDE.md` and update sections with previous information.
 
 <mandatory>
 **YOU MUST CREATE SECTION OF PROJECT STRUCTURE**
@@ -118,44 +127,32 @@ vite-open-api-server/
 ```
 </mandatory>
 
-Copy or write file to the root of the project.
-
-```bash
-cp ./skills/setup-project/templates/CLAUDE.md ./
-```
+Write the CLAUDE.md file to the root of the project (do NOT copy — generate from template with project info filled in).
 
 ---
 
-## Step 3: Create and copy AGENTS.md
+## Step 3: Create AGENTS.md
 
-Use the template at `./skills/setup-project/templates/AGENTS.md`.
+Use the template at `${CLAUDE_PLUGIN_ROOT}/skills/setup-project/templates/AGENTS.md`.
 
 Copy or write file to the root of the project.
 
-```bash
-cp ./skills/setup-project/templates/AGENTS.md ./
-```
-
 ---
 
-## Step 4: Copy skills directory
+## Step 4: Create Tech Supervisors
 
-Copy skills directory to .claude/skills.
+Dynamic supervisors are project-specific and must live in `.claude/agents/`. Ensure the directory exists:
 
 ```bash
-cp -r ./skills ./claude/skills
+mkdir -p .claude/agents
 ```
-
----
-
-## Step 5: Create Tech supervisors
 
 Dispatch using **exactly** these parameters — no more, no less:
 
 ```python
 Task(
     subagent_type="discovery",
-    prompt="Detect tech stack and create supervisors for this project"
+    prompt="Detect tech stack and create supervisors for this project. Write supervisor files to .claude/agents/."
 )
 ```
 
@@ -163,26 +160,7 @@ Task(
 
 ---
 
-## Step 6: Copy core agents
-
-Use the core agent templates from `./agents/`.
-
-Copy the files to .claude/agents directory.
-
-```bash
-cp ./agents/architect.md ./.claude/agents/
-cp ./agents/product-manager.md ./.claude/agents/
-cp ./agents/research.md ./.claude/agents/
-cp ./agents/discovery.md ./.claude/agents/
-cp ./agents/code-reviewer.md ./.claude/agents/
-cp ./agents/qa-gate.md ./.claude/agents/
-cp ./agents/refactoring-supervisor.md ./.claude/agents/
-cp ./agents/beads-owner.md ./.claude/agents/
-```
-
----
-
-## Step 7: Write Version File
+## Step 5: Write Version File
 
 Write the installed plugin version to `.claude/.mister-anderson-version` so the session-start hook can detect when updates are available.
 
@@ -194,15 +172,39 @@ echo "0.0.9" > ./.claude/.mister-anderson-version
 
 ---
 
-## Step 8: Offer to Remove Setup Skill
+## Step 6: Cleanup Legacy Local Copies (if upgrading from pre-0.1.0)
 
-The setup is complete. Inform the user:
+Check if the project has legacy local copies from older plugin versions that copied skills, core agents, and hooks locally. These are no longer needed — the plugin system provides them.
 
-> "Setup is done! The `/setup-project` skill is typically only needed once per project. Do you want me to remove it from `.claude/skills/setup-project` to keep things clean? You can always re-run setup from the mister-anderson source if needed."
-
-**If user agrees:**
 ```bash
-rm -rf ./.claude/skills/setup-project
+# Check for legacy local skills
+ls -d .claude/skills/*/ 2>/dev/null
+# Check for legacy local hooks
+ls .claude/hooks/ 2>/dev/null
+# Check for legacy core agents (NOT dynamic supervisors)
+ls .claude/agents/{architect,product-manager,research,discovery,code-reviewer,qa-gate,beads-owner}.md 2>/dev/null
 ```
 
-**If user declines:** leave it in place, no further action needed.
+**If legacy files found:**
+- Inform user: "Found legacy local copies from a previous plugin version. These are now provided by the plugin system and the local copies cause duplicate commands."
+- Ask user: "Do you want to remove the legacy local copies? Your dynamic supervisors and project files (CLAUDE.md, AGENTS.md) will NOT be touched."
+- **If user agrees** → run cleanup (see below)
+- **If user declines** → skip, warn that duplicate commands will persist
+
+### Cleanup commands
+
+```bash
+# Remove legacy local skills (plugin provides these)
+rm -rf .claude/skills/
+
+# Remove legacy local hooks (plugin provides these via plugin.json)
+rm -rf .claude/hooks/
+
+# Remove legacy core agents ONLY (preserve dynamic supervisors)
+CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate beads-owner refactoring-supervisor)
+for agent in "${CORE_AGENTS[@]}"; do
+  rm -f ".claude/agents/${agent}.md"
+done
+```
+
+**Important:** Do NOT remove `.claude/agents/*-supervisor.md` files created by Discovery — those are project-specific. Only remove the 8 core agents listed above.

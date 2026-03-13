@@ -808,17 +808,17 @@ To update:
 
 **What happens:**
 1. **Version check** — Compares your installed version (`.claude/.mister-anderson-version`) with the latest from the plugin source
-2. **Diff preview** — Shows what will be updated, what will be preserved, and any new/removed files
+2. **Legacy detection** — Checks for local copies of skills, core agents, and hooks from older versions
 3. **User confirmation** — You approve before anything is changed
-4. **Apply** — Core agents, skills, and hooks are overwritten with the latest versions
-5. **Verify** — Confirms all files were updated and dynamic supervisors are intact
+4. **Cleanup** — Removes legacy local copies that are now provided by the plugin system
+5. **Verify** — Confirms dynamic supervisors are intact and no duplicates remain
 
-**What gets updated:**
+**What the plugin provides automatically** (no local copy needed):
+- Skills — all workflow commands
 - 8 core agents (architect, product-manager, research, discovery, code-reviewer, qa-gate, refactoring-supervisor, beads-owner)
-- All skills
-- Hook scripts
+- Hook scripts (session-start, discipline injection)
 
-**What is preserved (never touched):**
+**What stays local** (never touched):
 - `CLAUDE.md`, `AGENTS.md`, `BEADS-WORKFLOW.md` — your project-specific configs
 - Dynamic supervisors — `*-supervisor.md` files created by Discovery for your tech stack
 - `.beads/` database — your task history
@@ -826,26 +826,11 @@ To update:
 
 **After updating**, if the new version includes changes to supervisor templates, you're offered the option to re-run Discovery to refresh dynamic supervisors without deleting existing ones.
 
-#### Upgrading from pre-0.0.6
+#### Upgrading from pre-0.1.0
 
-If your project was set up with mister-anderson **< 0.0.6**, the `/update-plugin` skill doesn't exist yet. A one-time bootstrap is needed:
+If your project was set up with mister-anderson **< 0.1.0**, you likely have local copies of skills, core agents, and hooks that are now provided by the plugin system. Running `/update-plugin` will detect these legacy copies and offer to clean them up.
 
-```bash
-# 1. Write your current installed version (replace with your actual version)
-echo "0.0.4" > .claude/.mister-anderson-version
-
-# 2. Download the update-plugin skill from GitHub
-mkdir -p .claude/skills/update-plugin
-curl -sf https://raw.githubusercontent.com/websublime/mister-anderson/main/skills/update-plugin/SKILL.md \
-  > .claude/skills/update-plugin/SKILL.md
-
-# 3. Now run the update normally
-/update-plugin
-```
-
-This is a one-time step. After `/update-plugin` runs, all future updates are handled by `/update-plugin` directly.
-
-> **What about CLAUDE.md and AGENTS.md?** These files contain project-specific content and are never overwritten by `/update-plugin`. If a new plugin version adds sections to the templates, check the [changelog](https://github.com/websublime/mister-anderson/releases) and add them manually if needed.
+> **What about CLAUDE.md and AGENTS.md?** These files contain project-specific content and are never touched by `/update-plugin`. If a new plugin version adds sections to the templates, check the [changelog](https://github.com/websublime/mister-anderson/releases) and add them manually if needed.
 
 ---
 

@@ -24,7 +24,7 @@ if [[ -n "$REPO_ROOT" ]]; then
   DIRTY=$(git -C "$REPO_ROOT" status --porcelain 2>/dev/null)
   if [[ -n "$DIRTY" ]]; then
     echo "⚠️  WARNING: Main directory has uncommitted changes."
-    echo "   Agents should only work in .worktrees/"
+    echo "   Agents should work on feature branches, not directly on main."
     echo ""
   fi
 fi
