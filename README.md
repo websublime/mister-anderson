@@ -107,6 +107,12 @@ This will:
        NEEDS-REFACTORING --> Dispatch Martin (refactoring-supervisor)
        NEEDS-REWORK     --> Label: needs-rework, back to /start-task
        |
+    Phase 5: Track review findings
+       --> Non-[GOOD] findings that won't be addressed in
+           the current cycle are created as tracked issues
+           under the "Review Findings" epic via Fernando
+       --> Each gets a finding:{severity} label
+       |
 /qa-task
     |
     Phase 1: List beads with approved label
@@ -120,6 +126,13 @@ This will:
        |
        PASS --> Label: qa-passed, ready to merge
        FAIL --> Rework, follow-up bead, or override
+       |
+    Phase 5: Track QA findings
+       --> Non-positive findings ([EXTRA], [DEVIATES], [RISK],
+           [MINOR]) that won't be addressed in the current cycle
+           are created as tracked issues under the
+           "Review Findings" epic via Fernando
+       --> Each gets a finding:{type} label
 ```
 
 ---
@@ -236,6 +249,7 @@ After implementation, the supervisor marks the bead `in-review` with label `need
 1. **Linus** (code-reviewer) analyzes the branch diff against acceptance criteria
 2. Each finding has a severity: `CRITICAL`, `WARNING`, `SUGGESTION`, `GOOD`
 3. Verdict: `APPROVE`, `NEEDS-REFACTORING`, or `NEEDS-REWORK`
+4. Non-`[GOOD]` findings that aren't addressed in the current cycle are automatically tracked as issues under the **Review Findings** epic with `finding:{severity}` labels
 
 ### Smart Refactoring
 
@@ -565,6 +579,12 @@ Shows beads with the `needs-review` label. Pick which one to review.
 - You're told to use `/start-task bd-xxx` to re-dispatch the implementation supervisor
 - The existing branch is preserved — `/start-task` will detect it and ask if you want to continue on it
 
+**After any verdict — Track Review Findings:**
+- All non-`[GOOD]` findings that won't be addressed in the current cycle are extracted from the REVIEW comment
+- Fernando (beads-owner) checks each finding against existing open tasks to avoid duplicates — if a finding is already covered by a future task, he adds a comment and `discovered-from` link to that task instead of creating a new one
+- Unmatched findings get a new issue under the **Review Findings** epic with `finding:{severity}` label, `discovered-from` dependency, and priority mapped from severity (P3/P2/P1)
+- This ensures suggestions are never lost while avoiding duplicate tracking
+
 ---
 
 ### Handling a NEEDS-REWORK Cycle
@@ -639,6 +659,11 @@ Shows beads with the `approved` label. Pick which one to QA.
 **If FAIL:**
 - Failures listed with severity
 - You decide: rework (back to `/start-task`), create follow-up bead, or override and merge anyway
+
+**After any verdict — Track QA Findings:**
+- All non-positive findings (`[EXTRA]`, `[DEVIATES]`, `[RISK]`, `[MINOR]`, unlogged deviations) that won't be addressed in the current cycle are extracted from the QA comment
+- Fernando (beads-owner) checks each finding against existing open tasks to avoid duplicates — if already covered, he links back with a comment and `discovered-from` dependency instead of creating a new issue
+- Unmatched findings get a new issue under the **Review Findings** epic (same epic used by `/review-task`) with `finding:{type}` label, `discovered-from` dependency, and priority mapped from type (P3/P2/P1)
 
 ---
 
