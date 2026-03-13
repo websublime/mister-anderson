@@ -824,6 +824,27 @@ To update:
 
 **After updating**, if the new version includes changes to supervisor templates, you're offered the option to re-run Discovery to refresh dynamic supervisors without deleting existing ones.
 
+#### Upgrading from pre-0.0.6
+
+If your project was set up with mister-anderson **< 0.0.6**, the `/update-plugin` skill doesn't exist yet. A one-time bootstrap is needed:
+
+```bash
+# 1. Write your current installed version (replace with your actual version)
+echo "0.0.4" > .claude/.mister-anderson-version
+
+# 2. Download the update-plugin skill from GitHub
+mkdir -p .claude/skills/update-plugin
+curl -sf https://raw.githubusercontent.com/websublime/mister-anderson/main/skills/update-plugin/SKILL.md \
+  > .claude/skills/update-plugin/SKILL.md
+
+# 3. Now run the update normally
+/update-plugin
+```
+
+This is a one-time step. After `/update-plugin` runs, all future updates are handled by `/update-plugin` directly.
+
+> **What about CLAUDE.md and AGENTS.md?** These files contain project-specific content and are never overwritten by `/update-plugin`. If a new plugin version adds sections to the templates, check the [changelog](https://github.com/websublime/mister-anderson/releases) and add them manually if needed.
+
 ---
 
 ### The Complete Comment Trail
