@@ -41,12 +41,16 @@ Check if a supervisor already exists for this technology:
 
 Dispatch the Discovery agent in **on-demand mode** to create a single supervisor:
 
+Dispatch using **exactly** these parameters — no more, no less:
+
 ```python
 Task(
     subagent_type="discovery",
     prompt="Create a supervisor for {technology}. This is on-demand mode — do NOT scan the full codebase. Create only the {technology} supervisor by fetching the specialist from the external directory, filtering the content, injecting the beads workflow, and writing to .claude/agents/. Also update the Supervisors section in CLAUDE.md."
 )
 ```
+
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 
 ---
 

@@ -192,12 +192,13 @@ If the new version includes changes to supervisor templates or the discovery age
 
 > "The discovery agent template was updated in this version. Do you want to re-run discovery to refresh your dynamic supervisors? This will NOT delete existing ones — only create missing ones or update the template."
 
-**If user agrees:**
+**If user agrees**, dispatch using **exactly** these parameters — no more, no less:
 ```python
 Task(
     subagent_type="discovery",
     prompt="Detect tech stack and create/update supervisors for this project. Do NOT delete existing supervisors."
 )
 ```
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 
 **If user declines:** no action needed.

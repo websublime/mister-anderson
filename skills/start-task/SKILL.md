@@ -65,13 +65,14 @@ If the bead does not exist, inform the user and stop.
 3. **If no investigation found:**
    - Inform user: "No investigation found for this bead. I can dispatch the research agent to investigate first."
    - Ask user: "Do you want to proceed with investigation, or skip and dispatch directly to the supervisor?"
-   - **If user wants investigation** → dispatch research agent:
+   - **If user wants investigation** → dispatch research agent using **exactly** these parameters — no more, no less:
      ```python
      Task(
          subagent_type="research",
          prompt="Investigate BEAD {BEAD_ID}. [Include EPIC_ID if epic child]. Read the bead (bd show {BEAD_ID}) for full context — description, acceptance criteria, and design notes. Log your structured findings as a bead comment using bd comments add."
      )
      ```
+     **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
    - Wait for the research agent to complete before proceeding to Phase 5
    - **If user wants to skip** → proceed directly to Phase 5
 4. **If investigation already exists** → proceed directly to Phase 5
@@ -109,12 +110,13 @@ git branch -a | grep {BEAD_ID}
    Dispatching {resolved-supervisor} for {BEAD_ID}: "{bead title}"
    ```
 
-3. Dispatch the resolved supervisor:
+3. Dispatch the resolved supervisor using **exactly** these parameters — no more, no less:
    ```python
    Task(
        subagent_type="{resolved-supervisor}",
        prompt="Implement BEAD {BEAD_ID}. [Include EPIC_ID if epic child]. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, and investigation findings."
    )
    ```
+   **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 
 4. The `PreToolUse` hook automatically injects the discipline reminder because the agent name ends in `-supervisor`.

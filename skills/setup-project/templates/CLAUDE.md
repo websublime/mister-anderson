@@ -23,6 +23,10 @@ See AGENTS.md for workflow details.
 - **Co-pilot** — discuss before acting. Summarize your proposed plan. Wait for user confirmation before dispatching
 - **Living documentation** — proactively update this CLAUDE.md to reflect project state, learnings, and architecture
 
+## Mandatory: No Unilateral Decisions
+
+**Follow skill instructions exactly as written.** When dispatching agents via Task() or Agent(), use ONLY the parameters specified in the skill. Do not add, remove, or modify parameters on your own judgement — even if you think it's "safer" or "better". If in doubt, ask the user. This is non-negotiable.
+
 ## Commit Strategy
 
 **Atomic commits as you go** - Create logical commits during development, not after:

@@ -150,12 +150,16 @@ cp -r ./skills ./claude/skills
 
 ## Step 5: Create Tech supervisors
 
+Dispatch using **exactly** these parameters — no more, no less:
+
 ```python
 Task(
     subagent_type="discovery",
     prompt="Detect tech stack and create supervisors for this project"
 )
 ```
+
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 
 ---
 

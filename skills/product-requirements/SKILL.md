@@ -21,12 +21,16 @@ If the user provides $ARGUMENTS, analyze them first and ask for clarification if
 
 ## Dispatch
 
+Dispatch using **exactly** these parameters — no more, no less:
+
 ```python
 Task(
     subagent_type="product-manager",
     prompt="Create a PRD for the requested feature/product. Save the PRD to {agreed_path}. Context: {user_idea}. Reference documents: {doc_paths_if_any}"
 )
 ```
+
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 
 ## After Dispatch
 

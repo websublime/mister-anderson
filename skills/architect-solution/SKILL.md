@@ -24,12 +24,16 @@ If the user provides $ARGUMENTS, analyze them first and ask for clarification if
 
 ## Dispatch
 
+Dispatch using **exactly** these parameters — no more, no less:
+
 ```python
 Task(
     subagent_type="architect",
     prompt="Create design and specs for the requested solution. Read the PRD at {prd_path} as your input requirements. Save the design document to {spec_path} with status DRAFT. Iterate with the user until APPROVED."
 )
 ```
+
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 
 ## After Dispatch
 

@@ -51,12 +51,16 @@ If the bead does NOT have the `approved` label, warn the user: "This task hasn't
 
 Dispatch the QA agent to validate the implementation:
 
+Dispatch using **exactly** these parameters — no more, no less:
+
 ```python
 Task(
     subagent_type="qa-gate",
     prompt="QA validate BEAD {BEAD_ID} on branch {branch-name}. Spec: {spec_path}. PRD: {prd_path}. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, COMPLETED, DECISION, DEVIATION, and REVIEW comments. Run tests, build, and lint. Log a structured QA comment to the bead."
 )
 ```
+
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 
 ---
 
@@ -117,11 +121,12 @@ After the verdict is resolved (regardless of PASS or FAIL), extract actionable f
      bd create "Review Findings" --type epic --description "Persistent epic for tracking suggestions, warnings, and improvement opportunities identified during code reviews and QA that were not addressed in the current implementation cycle." --priority 3 --labels "findings"
      ```
    - Store the epic ID as `{FINDINGS_EPIC_ID}`
-4. Dispatch **beads-owner** to create one issue per finding:
+4. Dispatch **beads-owner** using **exactly** these parameters — no more, no less:
    ```python
    Task(
        subagent_type="beads-owner",
        prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. Each issue should be created under parent {FINDINGS_EPIC_ID} with a discovered-from:{BEAD_ID} dependency. Use label 'finding:{type}' (lowercase) for each — e.g., finding:extra, finding:deviation, finding:risk, finding:minor. Include the relevant context from the QA report. Findings:\n\n{FINDINGS_LIST}"
    )
    ```
+   **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 5. Inform the user how many finding issues were created and under which epic

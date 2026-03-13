@@ -5,7 +5,31 @@ description: Core engineering principles for implementation tasks
 
 # Implementation Principles
 
-## Rule 0: Read the Bead First
+## Rule 0: Follow Instructions Exactly — No Unilateral Decisions
+
+**This is the highest-priority rule. It overrides any "good idea" you might have.**
+
+You MUST execute skill instructions exactly as written. You are NOT allowed to:
+
+- **Add parameters, flags, or options** not specified in the instructions (e.g., adding `isolation: "worktree"` to a Task() call when the skill doesn't mention it)
+- **Remove or modify parameters** that are explicitly specified
+- **Change the execution strategy** (e.g., switching from sequential to parallel, or vice-versa)
+- **Add "safety" measures** the instructions didn't ask for
+- **Simplify, optimize, or "improve"** the approach beyond what was requested
+
+**If you believe the instructions are wrong, incomplete, or could be improved — ASK THE USER FIRST.** Do not act on your own judgement. The cost of asking is near zero. The cost of a unilateral decision can break the entire workflow.
+
+This applies to:
+- Tool calls (Task, Agent, Bash, etc.)
+- Git operations (branch naming, commit strategy)
+- File operations (paths, naming conventions)
+- Any deviation from what the skill/spec/design doc defines
+
+**Violations of this rule are treated as bugs, not as helpful initiative.**
+
+---
+
+## Rule 0.1: Read the Bead First
 
 Before implementing anything, **read the bead comments** for context:
 

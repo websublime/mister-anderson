@@ -17,9 +17,13 @@ If the user provides $ARGUMENTS, analyze them first and ask for clarification if
     - If project is monorepo and the issue or epic belongs to a specific package, add the package name in the design notes, so the implementation supervisor can route it to the correct discipline.
 </mandatory-rule-create-issue>
 
+Dispatch using **exactly** these parameters — no more, no less:
+
 ```python
 Task(
     subagent_type="beads-owner",
     prompt="Create issues for this project"
 )
 ```
+
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.

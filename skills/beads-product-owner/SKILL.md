@@ -13,9 +13,13 @@ If the user provides $ARGUMENTS, analyze them first and ask for clarification if
 - Ask the user if he already have defined a plan for the solution, if yes, ask him where you can find.
 - User can share the all product plan or a feature plan. 
 
+Dispatch using **exactly** these parameters — no more, no less:
+
 ```python
 Task(
     subagent_type="beads-owner",
     prompt="Create epics and issues for the requested solution based on the provided product requirements and user stories. If a product plan is provided, use it as a reference to create the epics and issues."
 )
 ```
+
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
