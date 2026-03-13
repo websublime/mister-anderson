@@ -183,7 +183,7 @@ cp ./agents/beads-owner.md ./.claude/agents/
 Write the installed plugin version to `.claude/.mister-anderson-version` so the session-start hook can detect when updates are available.
 
 ```bash
-echo "0.0.6" > ./.claude/.mister-anderson-version
+echo "0.0.7" > ./.claude/.mister-anderson-version
 ```
 
 > **Important:** When bumping the plugin version, update this step to match the new version in `plugin.json`.
