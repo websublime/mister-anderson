@@ -54,85 +54,118 @@ This will:
 
 ## The Pipeline
 
-```
-/product-requirements        Elicit and structure requirements (PRD)
-        |
-/architect-solution          Design the solution from PRD
-        |
-/beads-product-owner         Create epics and tasks with acceptance criteria
-/create-bead-issues          Create individual issues
-        |
-/start-task [bd-xxx]         Pick a task, investigate, implement
-        |
-/review-task [bd-xxx]        Code review gate, optional refactoring
-        |
-/qa-task [bd-xxx]            QA validation: conformity, tests, build, lint
-        |
-    Create PR                External reviews run (CodeRabbit, Copilot, etc.)
-        |
-    User merges              You decide when it's ready
+```mermaid
+flowchart LR
+    PRD["/product-requirements"]
+    ARCH["/architect-solution"]
+    TASKS["/beads-product-owner\n/create-bead-issues"]
+    START["/start-task"]
+    REVIEW["/review-task"]
+    QA["/qa-task"]
+    PR["Create PR"]
+    MERGE(("User\nmerges"))
+
+    PRD --> ARCH --> TASKS --> START --> REVIEW --> QA --> PR --> MERGE
+
+    style PRD fill:#2d4a7a,stroke:#5b9bd5,color:#fff
+    style ARCH fill:#2d4a7a,stroke:#5b9bd5,color:#fff
+    style TASKS fill:#2d4a7a,stroke:#5b9bd5,color:#fff
+    style START fill:#1a6b3c,stroke:#4caf50,color:#fff
+    style REVIEW fill:#7a4a2d,stroke:#e67e22,color:#fff
+    style QA fill:#7a4a2d,stroke:#e67e22,color:#fff
+    style PR fill:#4a4a4a,stroke:#888,color:#fff
+    style MERGE fill:#1a6b3c,stroke:#4caf50,color:#fff
 ```
 
 ### Detailed Flow
 
-```
-/start-task bd-xxx
-    |
-    Phase 1: Resolve bead ID (or show ready tasks)
-    Phase 2: Read full context (description, acceptance, design, epic docs)
-    Phase 3: Resolve supervisor from assignee field
-    Phase 4: Investigation check
-       |
-       No investigation found?
-       --> Dispatch Sherlock (research agent)
-       --> Logs INVESTIGATION: comment to bead
-       |
-    Phase 5: Check for existing branch (NEEDS-REWORK cycles)
-    Phase 6: Dispatch implementation supervisor
-       |
-       Supervisor creates branch, implements, tests
-       --> Logs COMPLETED: comment to bead
-       --> Adds needs-review label
-       --> Marks status in-review
-       |
-/review-task
-    |
-    Phase 1: List beads with needs-review label
-    Phase 2: Read bead context + COMPLETED comment
-    Phase 3: Dispatch Linus (code-reviewer)
-       --> Logs REVIEW: comment with verdict
-    Phase 4: Present verdict
-       |
-       APPROVE          --> Label: approved, proceed to QA
-       NEEDS-REFACTORING --> Dispatch Martin (refactoring-supervisor)
-       NEEDS-REWORK     --> Label: needs-rework, back to /start-task
-       |
-    Phase 5: Track review findings
-       --> Non-[GOOD] findings that won't be addressed in
-           the current cycle are created as tracked issues
-           under the "Review Findings" epic via Fernando
-       --> Each gets a finding:{severity} label
-       |
-/qa-task
-    |
-    Phase 1: List beads with approved label
-    Phase 2: Read bead context + spec/PRD
-    Phase 3: Dispatch Quinn (qa-gate)
-       --> Conformity check, user stories, boundaries
-       --> Runs tests, build, lint
-       --> Audits decision trail
-       --> Logs QA: comment with verdict
-    Phase 4: Present verdict
-       |
-       PASS --> Label: qa-passed, ready to merge
-       FAIL --> Rework, follow-up bead, or override
-       |
-    Phase 5: Track QA findings
-       --> Non-positive findings ([EXTRA], [DEVIATES], [RISK],
-           [MINOR]) that won't be addressed in the current cycle
-           are created as tracked issues under the
-           "Review Findings" epic via Fernando
-       --> Each gets a finding:{type} label
+```mermaid
+flowchart TD
+    subgraph START ["/start-task"]
+        S1["Resolve bead ID\nor show ready tasks"]
+        S2["Read full context\ndescription, acceptance, design, epic docs"]
+        S3["Resolve supervisor\nfrom assignee field"]
+        S4{"Investigation\nexists?"}
+        S4Y["Use existing investigation"]
+        S4N["Dispatch Sherlock\nlogs INVESTIGATION: comment"]
+        S5{"Branch\nexists?"}
+        S5Q["Ask: continue or fresh?"]
+        S6["Dispatch implementation supervisor\ncreate branch, implement, test"]
+        S7["Logs COMPLETED: comment\nadds needs-review label\nstatus → in-review"]
+
+        S1 --> S2 --> S3 --> S4
+        S4 -- Yes --> S4Y --> S5
+        S4 -- No --> S4N --> S5
+        S5 -- Yes --> S5Q --> S6
+        S5 -- No --> S6
+        S6 --> S7
+    end
+
+    subgraph REVIEW ["/review-task"]
+        R1["List beads with\nneeds-review label"]
+        R2["Read bead context\n+ COMPLETED comment"]
+        R3["Dispatch Linus\ncode-reviewer"]
+        R4{"Verdict?"}
+        R_APP["APPROVE\nlabel: approved"]
+        R_REF["NEEDS-REFACTORING"]
+        R_REW["NEEDS-REWORK\nlabel: needs-rework"]
+        R_REF_Q{"Dispatch\nMartin?"}
+        R_REF_Y["Dispatch refactoring-supervisor\nfix validated issues"]
+        R5["Track review findings\nvia Fernando"]
+        R5D{"Finding covered\nby existing task?"}
+        R5_LINK["Link to existing task\ncomment + discovered-from dep"]
+        R5_NEW["Create issue under\nReview Findings epic\nlabel: finding:severity"]
+
+        R1 --> R2 --> R3 --> R4
+        R4 -- APPROVE --> R_APP
+        R4 -- NEEDS-REFACTORING --> R_REF --> R_REF_Q
+        R4 -- NEEDS-REWORK --> R_REW
+        R_REF_Q -- Yes --> R_REF_Y --> R5
+        R_REF_Q -- No --> R5
+        R_APP --> R5
+        R_REW --> R5
+        R5 --> R5D
+        R5D -- Yes --> R5_LINK
+        R5D -- No --> R5_NEW
+    end
+
+    subgraph QA ["/qa-task"]
+        Q1["List beads with\napproved label"]
+        Q2["Read bead context\n+ spec/PRD"]
+        Q3["Dispatch Quinn\nconformity, tests, build, lint"]
+        Q4{"Verdict?"}
+        Q_PASS["PASS\nlabel: qa-passed"]
+        Q_FAIL["FAIL"]
+        Q_FAIL_Q{"User\ndecision?"}
+        Q_REWORK["Rework\nback to /start-task"]
+        Q_FOLLOWUP["Follow-up bead\nor override"]
+        Q5["Track QA findings\nvia Fernando"]
+        Q5D{"Finding covered\nby existing task?"}
+        Q5_LINK["Link to existing task\ncomment + discovered-from dep"]
+        Q5_NEW["Create issue under\nReview Findings epic\nlabel: finding:type"]
+
+        Q1 --> Q2 --> Q3 --> Q4
+        Q4 -- PASS --> Q_PASS --> Q5
+        Q4 -- FAIL --> Q_FAIL --> Q_FAIL_Q
+        Q_FAIL_Q -- Rework --> Q_REWORK
+        Q_FAIL_Q -- "Follow-up / Override" --> Q_FOLLOWUP --> Q5
+        Q_REWORK --> Q5
+        Q5 --> Q5D
+        Q5D -- Yes --> Q5_LINK
+        Q5D -- No --> Q5_NEW
+    end
+
+    S7 --> R1
+    R_APP --> Q1
+    R_REW -.-> S1
+    R_REF_Y -.-> R3
+    Q_REWORK -.-> S1
+    Q_PASS --> MERGE(("User merges\nCreate PR"))
+
+    style START fill:#0d1117,stroke:#4caf50,color:#fff
+    style REVIEW fill:#0d1117,stroke:#e67e22,color:#fff
+    style QA fill:#0d1117,stroke:#e67e22,color:#fff
+    style MERGE fill:#1a6b3c,stroke:#4caf50,color:#fff
 ```
 
 ---
