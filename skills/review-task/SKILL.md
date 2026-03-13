@@ -103,22 +103,28 @@ After the verdict is resolved (regardless of APPROVE, NEEDS-REFACTORING, or NEED
 ### Process
 
 1. Parse the REVIEW comment for all findings that are NOT `[GOOD]`
-2. Filter out findings that were already addressed (by the refactoring-supervisor in NEEDS-REFACTORING flow, or that will be addressed by NEEDS-REWORK flow — i.e., `[CRITICAL]` and `[WARNING]` when verdict is NEEDS-REWORK)
-3. For remaining findings, resolve the project's **Review Findings epic**:
+2. **If the refactoring-supervisor ran (Phase 6)**, also parse the REFACTORING comment:
+   - Extract all **SKIPPED** items — these are findings Martin could not fix (out of scope, architectural, risky)
+   - Extract all **DEFERRED** items — these are findings Martin deferred with `// TODO(bd-xxx)` references
+   - Remove from the REVIEW findings list any items that were **FIXED** by Martin (they're resolved)
+   - SKIPPED items always become tracked findings
+   - DEFERRED items are already tracked (Martin linked them to existing beads) — skip these
+3. Filter out findings that were already addressed (FIXED by refactoring-supervisor, or that will be addressed by NEEDS-REWORK flow — i.e., `[CRITICAL]` and `[WARNING]` when verdict is NEEDS-REWORK)
+4. For remaining findings, resolve the project's **Review Findings epic**:
    - Search for an open epic titled "Review Findings": `bd list --type epic --status open --json` and filter by title
    - If not found, create it:
      ```bash
      bd create "Review Findings" --type epic --description "Persistent epic for tracking suggestions, warnings, and improvement opportunities identified during code reviews that were not addressed in the current implementation cycle." --priority 3 --labels "findings"
      ```
    - Store the epic ID as `{FINDINGS_EPIC_ID}`
-4. Dispatch **beads-owner** to create one issue per finding:
+5. Dispatch **beads-owner** to create one issue per finding:
    ```python
    Task(
        subagent_type="beads-owner",
        prompt="Create beads issues for the following review findings from BEAD {BEAD_ID} review. Each issue should be created under parent {FINDINGS_EPIC_ID} with a discovered-from:{BEAD_ID} dependency. Use label 'finding:{severity}' (lowercase) for each — e.g., finding:suggestion, finding:warning, finding:critical. Include the file path and line number in the description. Findings:\n\n{FINDINGS_LIST}"
    )
    ```
-5. Inform the user how many finding issues were created and under which epic
+6. Inform the user how many finding issues were created and under which epic
 
 ---
 
