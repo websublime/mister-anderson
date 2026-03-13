@@ -29,6 +29,23 @@ if [[ -n "$REPO_ROOT" ]]; then
   fi
 fi
 
+# ============================================================
+# Plugin Version Check - Notify if update available
+# ============================================================
+VERSION_FILE="$CLAUDE_PROJECT_DIR/.claude/.mister-anderson-version"
+if [[ -f "$VERSION_FILE" ]]; then
+  LOCAL_VERSION=$(cat "$VERSION_FILE" 2>/dev/null | tr -d '[:space:]')
+  REMOTE_VERSION=$(curl -sf --max-time 3 \
+    https://raw.githubusercontent.com/websublime/mister-anderson/main/.claude-plugin/plugin.json \
+    2>/dev/null | grep '"version"' | head -1 | sed 's/[^0-9.]//g')
+
+  if [[ -n "$REMOTE_VERSION" && "$REMOTE_VERSION" != "$LOCAL_VERSION" ]]; then
+    echo "⬆️  mister-anderson update available: $LOCAL_VERSION → $REMOTE_VERSION"
+    echo "   Run /update-plugin to update."
+    echo ""
+  fi
+fi
+
 echo ""
 echo "## Task Status"
 echo ""

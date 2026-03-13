@@ -186,6 +186,7 @@ User-invocable commands that orchestrate the workflow.
 | **qa-task** | `/qa-task [bead-id]` | QA finalization: spec conformity, tests, build, lint |
 | **add-supervisor** | `/add-supervisor [tech]` | Create a new supervisor for a specific technology |
 | **migrate-beads** | `/migrate-beads` | Migrate existing beads to updated field conventions (e.g., supervisor→assignee) |
+| **update-plugin** | `/update-plugin` | Update core agents, skills, and hooks to the latest plugin version |
 
 ### Internal Skills
 
@@ -331,7 +332,7 @@ Banned: working on main, implementing without a bead ID, self-merging.
 | Hook | Trigger | Purpose |
 |------|---------|---------|
 | **inject-discipline-reminder.sh** | `PreToolUse` (Task tool) | Injects discipline skill reminder when dispatching `*-supervisor` agents |
-| **session-start.sh** | `SessionStart` | Shows task context: in-progress, ready, blocked, stale, and labeled beads |
+| **session-start.sh** | `SessionStart` | Shows task context: in-progress, ready, blocked, stale, and labeled beads. Checks for plugin updates |
 
 ---
 
@@ -376,6 +377,8 @@ mister-anderson/
 |   |-- review-task/
 |   |   +-- SKILL.md
 |   |-- add-supervisor/
+|   |   +-- SKILL.md
+|   |-- update-plugin/
 |   |   +-- SKILL.md
 |   +-- subagents-discipline/
 |       +-- SKILL.md             # Auto-injected engineering rules
@@ -784,6 +787,42 @@ When field conventions change (like moving supervisor routing from notes to assi
 4. **Apply** — Updates beads with `bd update` after user confirmation
 
 Rules are idempotent — beads that already match current conventions are skipped. When future field conventions change, new rules are added to the skill and old ones naturally become no-ops.
+
+---
+
+### Updating the Plugin
+
+When a new version of mister-anderson is available, the session-start hook notifies you:
+
+```
+⬆️  mister-anderson update available: 0.0.5 → 0.0.6
+   Run /update-plugin to update.
+```
+
+To update:
+```
+/update-plugin
+```
+
+**What happens:**
+1. **Version check** — Compares your installed version (`.claude/.mister-anderson-version`) with the latest from the plugin source
+2. **Diff preview** — Shows what will be updated, what will be preserved, and any new/removed files
+3. **User confirmation** — You approve before anything is changed
+4. **Apply** — Core agents, skills, and hooks are overwritten with the latest versions
+5. **Verify** — Confirms all files were updated and dynamic supervisors are intact
+
+**What gets updated:**
+- 8 core agents (architect, product-manager, research, discovery, code-reviewer, qa-gate, refactoring-supervisor, beads-owner)
+- All skills
+- Hook scripts
+
+**What is preserved (never touched):**
+- `CLAUDE.md`, `AGENTS.md`, `BEADS-WORKFLOW.md` — your project-specific configs
+- Dynamic supervisors — `*-supervisor.md` files created by Discovery for your tech stack
+- `.beads/` database — your task history
+- `.claude/settings.json` — your project settings
+
+**After updating**, if the new version includes changes to supervisor templates, you're offered the option to re-run Discovery to refresh dynamic supervisors without deleting existing ones.
 
 ---
 

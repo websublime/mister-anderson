@@ -178,7 +178,19 @@ cp ./agents/beads-owner.md ./.claude/agents/
 
 ---
 
-## Step 7: Offer to Remove Setup Skill
+## Step 7: Write Version File
+
+Write the installed plugin version to `.claude/.mister-anderson-version` so the session-start hook can detect when updates are available.
+
+```bash
+echo "0.0.6" > ./.claude/.mister-anderson-version
+```
+
+> **Important:** When bumping the plugin version, update this step to match the new version in `plugin.json`.
+
+---
+
+## Step 8: Offer to Remove Setup Skill
 
 The setup is complete. Inform the user:
 
