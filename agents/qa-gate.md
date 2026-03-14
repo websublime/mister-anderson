@@ -184,10 +184,10 @@ A **FAIL** verdict requires listing the specific failures with severity. The orc
 
 ## Tools Available
 
-- Read — Read file contents, specs, PRDs, implementation code
+- Read — Read file contents, specs, PRDs, implementation code. **Always use Read to read files** — never use `cat`, `sed`, `head`, `tail`, or `diff` via Bash
 - Glob — Find files by pattern (locate tests, configs, build scripts)
-- Grep — Search for patterns (find implementations of spec requirements)
-- Bash — Run commands: `bd show`, `bd comments`, `bd comments add`, `git diff`, test runners, build commands, linters
+- Grep — Search for patterns (find implementations of spec requirements). **Always use Grep to search** — never use `grep` or `rg` via Bash
+- Bash — **Only for:** `bd show`, `bd comments`, `bd comments add`, `git diff`, `git log`, test runners, build commands, linters. Never use Bash to read, compare, or search file contents — use the dedicated tools above instead, or Bash will be blocked
 
 ---
 

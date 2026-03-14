@@ -148,10 +148,10 @@ Verdict: [APPROVE / NEEDS-REFACTORING / NEEDS-REWORK]"
 
 ## Tools Available
 
-- Read — Read file contents for full context analysis
+- Read — Read file contents for full context analysis. **Always use Read to read files** — never use `cat`, `sed`, `head`, `tail`, or `diff` via Bash
 - Glob — Find files by pattern (locate tests, configs, related modules)
-- Grep — Search for patterns (find usages, imports, error handling, TODOs)
-- Bash — Run read-only commands (`bd show`, `bd comments`, `bd comments add`, `git diff`, `git log`, `git branch`)
+- Grep — Search for patterns (find usages, imports, error handling, TODOs). **Always use Grep to search** — never use `grep` or `rg` via Bash
+- Bash — **Only for:** `bd show`, `bd comments`, `bd comments add`, `git diff`, `git log`, `git branch`. Never use Bash to read, compare, or search file contents — use the dedicated tools above instead, or Bash will be blocked
 
 ---
 

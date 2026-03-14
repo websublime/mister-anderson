@@ -101,7 +101,7 @@ After the verdict is resolved (regardless of APPROVE, NEEDS-REFACTORING, or NEED
 ### When to run
 
 - **APPROVE:** all non-`[GOOD]` findings are deferred — create issues for all of them
-- **NEEDS-REFACTORING:** after the refactoring-supervisor completes, check for remaining `[SUGGESTION]` findings that were skipped — create issues for those
+- **APPROVE after re-review (Phase 7):** parse both the original REVIEW and the REFACTORING comment to identify remaining unaddressed findings — create issues for SKIPPED and SUGGESTION items
 - **NEEDS-REWORK:** `[CRITICAL]` and `[WARNING]` findings will be addressed via `/start-task` rework, but any `[SUGGESTION]` findings should still be tracked
 
 ### Process
@@ -137,8 +137,6 @@ After the verdict is resolved (regardless of APPROVE, NEEDS-REFACTORING, or NEED
 
 Only if verdict is `NEEDS-REFACTORING` and user approves.
 
-**Important:** After the refactoring-supervisor completes, return to Phase 5 to track any remaining findings that were not addressed.
-
 Dispatch using **exactly** these parameters — no more, no less:
 
 ```python
@@ -149,3 +147,20 @@ Task(
 ```
 
 **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
+
+---
+
+## Phase 7: Re-Review After Refactoring
+
+**MANDATORY** after the refactoring-supervisor completes. You MUST NOT skip this phase — Martin's fix needs validation before approval.
+
+1. Read Martin's REFACTORING comment: `bd comments {BEAD_ID}`
+2. Confirm the bead still has `needs-review` label (Martin adds it on completion)
+3. **Loop back to Phase 3** — re-dispatch the code-reviewer (Linus) to validate Martin's changes
+4. After Linus completes the re-review, return to **Phase 4** to process the new verdict
+
+This creates the review loop: `NEEDS-REFACTORING → Martin fixes → Linus re-reviews → new verdict`.
+
+**Do NOT auto-approve** after Martin completes. Only Linus can issue an `APPROVE` verdict. Only an `APPROVE` verdict triggers the label transition from `needs-review` to `approved`.
+
+After the re-review verdict is processed (Phase 4), proceed to **Phase 5** to track any remaining findings.
