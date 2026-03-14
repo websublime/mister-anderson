@@ -184,3 +184,17 @@ Task(
 **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 
 **If user declines:** no action needed.
+
+---
+
+## Phase 6: Plugin Cache Refresh
+
+**ALWAYS show this warning at the end**, regardless of whether cleanup or discovery ran:
+
+> **Important:** The version file has been updated, but Claude Code's plugin cache may still hold the previous version. To complete the update:
+>
+> 1. Open the plugin menu: type `/plugin` or go to **Plugins → Installed**
+> 2. Select **mister-anderson** and click **"Update now"** — this downloads the latest version into the cache
+> 3. **Restart Claude Code** for the new skills, agents, and hooks to take effect
+>
+> Until you do this, Claude Code will continue using the cached (old) version of the plugin.
