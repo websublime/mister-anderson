@@ -35,14 +35,22 @@ Since v0.1.0, the plugin system provides skills, core agents, and hooks automati
 
 ## Phase 1: Version Check
 
-Compare installed version with the plugin source version.
+Compare installed version with the latest remote version.
 
 ```bash
 LOCAL_VERSION=$(cat .claude/.mister-anderson-version 2>/dev/null | tr -d '[:space:]')
 echo "Installed version: ${LOCAL_VERSION:-unknown}"
 ```
 
-Read the plugin source `plugin.json` to get the available version:
+Fetch the latest version from the remote repository (same method as session-start hook):
+```bash
+REMOTE_VERSION=$(curl -sf --max-time 5 \
+  https://raw.githubusercontent.com/websublime/mister-anderson/main/.claude-plugin/plugin.json \
+  2>/dev/null | grep '"version"' | head -1 | sed 's/[^0-9.]//g')
+echo "Remote version: ${REMOTE_VERSION:-fetch failed}"
+```
+
+**If remote fetch fails:** Warn user that remote version could not be checked. Fall back to reading the local plugin cache as a secondary source:
 ```bash
 cat ${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json
 ```
