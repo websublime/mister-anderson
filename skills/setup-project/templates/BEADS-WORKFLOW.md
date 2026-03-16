@@ -16,10 +16,19 @@
     ```bash
     # Checkout the base branch specified by the orchestrator (defaults to main)
     git checkout {BASE_BRANCH}
-    # Create branch (naming convention: feature/p0-XX-short-description)
-    # Types: feature, fix, chore following conventional commits
+    # Create branch using conventional commit type prefix:
     git checkout -b <type>/<task-id-kebab-case>
     ```
+    **Branch type mapping from bead type:**
+    | Bead type | Branch prefix |
+    |-----------|---------------|
+    | `feature` | `feat/`       |
+    | `bug`     | `fix/`        |
+    | `chore`   | `chore/`      |
+    | `task`    | `chore/`      |
+
+    Read the bead type with `bd show {BEAD_ID} --json` and map it to the correct prefix. Do NOT use the bead type literally as the branch prefix — always use the conventional commit mapping above.
+
     The orchestrator tells you which base branch to use in the dispatch prompt. If not specified, default to `main`.
 
 4. **Mark in progress:**

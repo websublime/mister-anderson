@@ -164,7 +164,10 @@ For more details, see README.md and QUICKSTART.md.
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd dolt push
+   # Only sync dolt if remote is NOT localhost:
+   bd dolt remote list --json  # check remote URL
+   # If remote URL contains "localhost" or "127.0.0.1" → skip dolt push (local DB, no sync needed)
+   # If remote URL is external (e.g., hosted dolt) → run: bd dolt push
    git push
    git status  # MUST show "up to date with origin"
    ```
