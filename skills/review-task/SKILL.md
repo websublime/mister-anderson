@@ -125,7 +125,7 @@ After the verdict is resolved (regardless of APPROVE, NEEDS-REFACTORING, or NEED
    ```python
    Task(
        subagent_type="beads-owner",
-       prompt="Create beads issues for the following review findings from BEAD {BEAD_ID} review. Each issue should be created under parent {FINDINGS_EPIC_ID} with a discovered-from:{BEAD_ID} dependency. Use label 'finding:{severity}' (lowercase) for each — e.g., finding:suggestion, finding:warning, finding:critical. Include the file path and line number in the description. Findings:\n\n{FINDINGS_LIST}"
+       prompt="Create beads issues for the following review findings from BEAD {BEAD_ID} review. IMPORTANT: Each issue MUST use --parent {FINDINGS_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the reviewed task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{severity}' (lowercase) for each — e.g., finding:suggestion, finding:warning, finding:critical. Include the file path and line number in the description. Findings:\n\n{FINDINGS_LIST}"
    )
    ```
    **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.

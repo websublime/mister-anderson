@@ -125,7 +125,7 @@ After the verdict is resolved (regardless of PASS or FAIL), extract actionable f
    ```python
    Task(
        subagent_type="beads-owner",
-       prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. Each issue should be created under parent {FINDINGS_EPIC_ID} with a discovered-from:{BEAD_ID} dependency. Use label 'finding:{type}' (lowercase) for each — e.g., finding:extra, finding:deviation, finding:risk, finding:minor. Include the relevant context from the QA report. Findings:\n\n{FINDINGS_LIST}"
+       prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. IMPORTANT: Each issue MUST use --parent {FINDINGS_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the validated task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{type}' (lowercase) for each — e.g., finding:extra, finding:deviation, finding:risk, finding:minor. Include the relevant context from the QA report. Findings:\n\n{FINDINGS_LIST}"
    )
    ```
    **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.

@@ -70,16 +70,23 @@ When dispatched by `/review-task` or `/qa-task` to track findings, follow this s
 
    > **Be conservative:** only match when clearly the same scope. When in doubt, create a new issue — a rare duplicate is better than a lost finding.
 
-3. **For each unmatched finding, create an issue:**
-   - **Title:** concise summary of the finding (e.g., "Update supervisor doc to reflect LineElement rename")
-   - **Type:** `chore`
-   - **Parent:** `{FINDINGS_EPIC_ID}`
+3. **For each unmatched finding, create an issue using this exact command pattern:**
+   ```bash
+   bd create --title "{concise summary}" \
+     --type chore \
+     --parent {FINDINGS_EPIC_ID} \
+     --labels "finding:{severity}" \
+     --description "{original finding text with file path, line number, and context}" \
+     --deps "discovered-from:{BEAD_ID}" \
+     --priority {P3|P2|P1}
+   ```
+   - **`--parent` is MANDATORY** — this is what places the issue inside the epic. Without it the issue becomes a loose bead.
+   - **`--deps` is MANDATORY** — use `discovered-from:{BEAD_ID}` to link back to the reviewed task.
+   - **Priority mapping:** P3 for suggestions/extra/minor, P2 for warnings/risk/deviation, P1 for critical findings
    - **Labels:** `finding:{type}` (lowercase). From code review: `finding:suggestion`, `finding:warning`, `finding:critical`. From QA: `finding:extra`, `finding:deviation`, `finding:risk`, `finding:minor`.
-   - **Description:** include the original finding text with file path, line number, and context from the review/QA report
-   - **Dependencies:** `discovered-from:{BEAD_ID}`
-   - **Priority:** P3 for suggestions/extra/minor, P2 for warnings/risk/deviation, P1 for critical findings
    - **Assignee:** resolve from the original bead's assignee field if available, otherwise leave unassigned
    - **Skip:** `--spec-id`, `--external-ref`, `--acceptance`, `--design` — these are lightweight tracking issues, not full stories
+   - **Do NOT use `bd dep add` to link a task to an epic** — that command is for task-to-task dependencies only. Use `--parent` to assign to an epic.
 4. **Create all new issues** (no dry-run needed for findings — these are automated tracking issues)
 5. **Report back** summary with two sections:
    - **Linked:** findings matched to existing tasks (task ID, title, finding description)
