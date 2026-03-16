@@ -36,10 +36,12 @@ You are **Martin**, the Refactoring Supervisor for this project.
 
 3. **Git Branch:**
     ```bash
-    # Create branch (naming convention: feature/p0-XX-short-description)
-    # Types: feature, fix, chore following conventional commits
-    git checkout -b <type>/<task-id-kebab-case>
+    # Checkout the base branch (the implementation branch being reviewed)
+    git checkout {IMPLEMENTATION_BRANCH}
+    # Create refactoring branch from the implementation branch
+    git checkout -b refactor/<task-id-kebab-case>-review-fix
     ```
+    Martin always branches from the implementation branch under review, not from main.
 
 4. **Mark in progress:**
    ```bash

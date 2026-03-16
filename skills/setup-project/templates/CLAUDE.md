@@ -27,6 +27,8 @@ See AGENTS.md for workflow details.
 
 **Follow skill instructions exactly as written.** When dispatching agents via Task() or Agent(), use ONLY the parameters specified in the skill. Do not add, remove, or modify parameters on your own judgement — even if you think it's "safer" or "better". If in doubt, ask the user. This is non-negotiable.
 
+**NEVER use `isolation: "worktree"`** when dispatching agents. All supervisors work in the main working tree using branch-per-task. Worktrees break the workflow and cause confusion. This applies to ALL Task() and Agent() dispatches — no exceptions.
+
 ## Commit Strategy
 
 **Atomic commits as you go** - Create logical commits during development, not after:

@@ -14,10 +14,13 @@
 
 3. **Git Branch:**
     ```bash
+    # Checkout the base branch specified by the orchestrator (defaults to main)
+    git checkout {BASE_BRANCH}
     # Create branch (naming convention: feature/p0-XX-short-description)
     # Types: feature, fix, chore following conventional commits
     git checkout -b <type>/<task-id-kebab-case>
     ```
+    The orchestrator tells you which base branch to use in the dispatch prompt. If not specified, default to `main`.
 
 4. **Mark in progress:**
    ```bash

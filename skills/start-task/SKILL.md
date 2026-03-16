@@ -79,7 +79,7 @@ If the bead does not exist, inform the user and stop.
 
 ---
 
-## Phase 5: Check for Existing Branch
+## Phase 5: Check for Existing Branch and Resolve Base Branch
 
 Before dispatching, check if a branch already exists for this bead (e.g., from a previous NEEDS-REWORK cycle):
 
@@ -92,7 +92,10 @@ git branch -a | grep {BEAD_ID}
 - Ask user: "Do you want to continue on the existing branch, or create a fresh branch?"
 - Include this context in the dispatch prompt so the supervisor knows whether to checkout the existing branch or create new
 
-**If no branch exists:** proceed normally.
+**If no branch exists:**
+- Ask user: "Which branch should I base the new branch from? (default: `main`)"
+- Store the answer as `{BASE_BRANCH}` (e.g., `main`, `develop`, `feat/some-feature`)
+- Include `{BASE_BRANCH}` in the dispatch prompt so the supervisor knows to run `git checkout {BASE_BRANCH}` before creating the new branch
 
 ---
 
@@ -114,7 +117,7 @@ git branch -a | grep {BEAD_ID}
    ```python
    Task(
        subagent_type="{resolved-supervisor}",
-       prompt="Implement BEAD {BEAD_ID}. [Include EPIC_ID if epic child]. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, and investigation findings."
+       prompt="Implement BEAD {BEAD_ID}. [Include EPIC_ID if epic child]. Base branch: {BASE_BRANCH} — run `git checkout {BASE_BRANCH}` before creating your feature branch. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, and investigation findings."
    )
    ```
    **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
