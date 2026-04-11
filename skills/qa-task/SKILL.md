@@ -114,18 +114,21 @@ After the verdict is resolved (regardless of PASS or FAIL), extract actionable f
 
 1. Parse the QA comment for all findings that are NOT positive — i.e., anything that is not `[CONFORMS]`, `[PASS]`, or `[OK]`
 2. Filter out findings that will be addressed in the current cycle (e.g., `[BLOCKER]` and `[MAJOR]` when user chose rework)
-3. For remaining findings, resolve the project's **Review Findings epic**:
-   - Search for an open epic titled "Review Findings": `bd list --type epic --status open --json` and filter by title
-   - If not found, create it:
-     ```bash
-     bd create "Review Findings" --type epic --description "Persistent epic for tracking suggestions, warnings, and improvement opportunities identified during code reviews and QA that were not addressed in the current implementation cycle." --priority 3 --labels "findings"
-     ```
-   - Store the epic ID as `{FINDINGS_EPIC_ID}`
+3. Resolve the **target epic** for findings:
+   - Parse the bead JSON from Phase 2: extract `parent` field
+   - **If the bead has a parent epic:** use it as `{TARGET_EPIC_ID}`
+   - **If the bead is standalone (no parent epic):** fall back to the "Review Findings" epic:
+     - Search for an open epic titled "Review Findings": `bd list --type epic --status open --json` and filter by title
+     - If not found, create it:
+       ```bash
+       bd create "Review Findings" --type epic --description "Fallback epic for tracking findings from standalone tasks (no parent epic) identified during QA that were not addressed in the current implementation cycle." --priority 3 --labels "findings"
+       ```
+     - Use it as `{TARGET_EPIC_ID}`
 4. Dispatch **beads-owner** using **exactly** these parameters — no more, no less:
    ```python
    Task(
        subagent_type="beads-owner",
-       prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. IMPORTANT: Each issue MUST use --parent {FINDINGS_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the validated task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{type}' (lowercase) for each — e.g., finding:extra, finding:deviation, finding:risk, finding:minor. Include the relevant context from the QA report. Findings:\n\n{FINDINGS_LIST}"
+       prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the validated task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{type}' (lowercase) for each — e.g., finding:extra, finding:deviation, finding:risk, finding:minor. Include the relevant context from the QA report. Findings:\n\n{FINDINGS_LIST}"
    )
    ```
    **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.

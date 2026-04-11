@@ -114,18 +114,21 @@ After the verdict is resolved (regardless of APPROVE, NEEDS-REFACTORING, or NEED
    - SKIPPED items always become tracked findings
    - DEFERRED items are already tracked (Martin linked them to existing beads) — skip these
 3. Filter out findings that were already addressed (FIXED by refactoring-supervisor, or that will be addressed by NEEDS-REWORK flow — i.e., `[CRITICAL]` and `[WARNING]` when verdict is NEEDS-REWORK)
-4. For remaining findings, resolve the project's **Review Findings epic**:
-   - Search for an open epic titled "Review Findings": `bd list --type epic --status open --json` and filter by title
-   - If not found, create it:
-     ```bash
-     bd create "Review Findings" --type epic --description "Persistent epic for tracking suggestions, warnings, and improvement opportunities identified during code reviews that were not addressed in the current implementation cycle." --priority 3 --labels "findings"
-     ```
-   - Store the epic ID as `{FINDINGS_EPIC_ID}`
+4. Resolve the **target epic** for findings:
+   - Parse the bead JSON from Phase 2: extract `parent` field
+   - **If the bead has a parent epic:** use it as `{TARGET_EPIC_ID}`
+   - **If the bead is standalone (no parent epic):** fall back to the "Review Findings" epic:
+     - Search for an open epic titled "Review Findings": `bd list --type epic --status open --json` and filter by title
+     - If not found, create it:
+       ```bash
+       bd create "Review Findings" --type epic --description "Fallback epic for tracking findings from standalone tasks (no parent epic) identified during code reviews that were not addressed in the current implementation cycle." --priority 3 --labels "findings"
+       ```
+     - Use it as `{TARGET_EPIC_ID}`
 5. Dispatch **beads-owner** using **exactly** these parameters — no more, no less:
    ```python
    Task(
        subagent_type="beads-owner",
-       prompt="Create beads issues for the following review findings from BEAD {BEAD_ID} review. IMPORTANT: Each issue MUST use --parent {FINDINGS_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the reviewed task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{severity}' (lowercase) for each — e.g., finding:suggestion, finding:warning, finding:critical. Include the file path and line number in the description. Findings:\n\n{FINDINGS_LIST}"
+       prompt="Create beads issues for the following review findings from BEAD {BEAD_ID} review. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the reviewed task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{severity}' (lowercase) for each — e.g., finding:suggestion, finding:warning, finding:critical. Include the file path and line number in the description. Findings:\n\n{FINDINGS_LIST}"
    )
    ```
    **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
