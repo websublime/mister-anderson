@@ -23,7 +23,7 @@ Each task gets its own branch, keeping main clean and enabling human session wor
 
 The mister-anderson plugin (installed via Claude Code plugin system) automatically provides:
 - **Skills** — all workflow commands (`/start-task`, `/review-task`, etc.)
-- **Core agents** — architect, product-manager, research, code-reviewer, qa-gate, beads-owner, refactoring-supervisor, discovery
+- **Core agents** — architect, product-manager, research, code-reviewer, qa-gate, beads-owner, discovery
 - **Hooks** — session-start dashboard, discipline injection for supervisors
 
 **This setup skill only creates project-specific files that the plugin cannot provide.**
@@ -201,10 +201,12 @@ rm -rf .claude/skills/
 rm -rf .claude/hooks/
 
 # Remove legacy core agents ONLY (preserve dynamic supervisors)
-CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate beads-owner refactoring-supervisor)
+CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate beads-owner)
 for agent in "${CORE_AGENTS[@]}"; do
   rm -f ".claude/agents/${agent}.md"
 done
+# Clean up removed agent
+rm -f ".claude/agents/refactoring-supervisor.md"
 ```
 
 **Important:** Do NOT remove `.claude/agents/*-supervisor.md` files created by Discovery — those are project-specific. Only remove the 8 core agents listed above.

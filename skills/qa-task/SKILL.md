@@ -88,6 +88,7 @@ After the QA agent completes:
   - **Rework**: "Send back to `/start-task {BEAD_ID}` for the supervisor to address the gaps"
   - **Follow-up**: "Create a new bead for the gaps and merge this as-is"
   - **Override**: "Merge anyway — user's decision"
+- **If rework:** also ask: "Do you want the supervisor to continue on the current branch or create a new one? (default: current branch)"
 - Update labels based on user choice:
   ```bash
   # If rework:
@@ -97,6 +98,7 @@ After the QA agent completes:
   # If follow-up or override:
   bd label add {BEAD_ID} qa-override
   ```
+- If rework and the user chose a new branch, note it so `/start-task` can pass the instruction to the supervisor
 
 ---
 
@@ -114,16 +116,21 @@ After the verdict is resolved (regardless of PASS or FAIL), extract actionable f
 
 1. Parse the QA comment for all findings that are NOT positive — i.e., anything that is not `[CONFORMS]`, `[PASS]`, or `[OK]`
 2. Filter out findings that will be addressed in the current cycle (e.g., `[BLOCKER]` and `[MAJOR]` when user chose rework)
-3. Resolve the **target epic** for findings:
-   - Parse the bead JSON from Phase 2: extract `parent` field
-   - **If the bead has a parent epic:** use it as `{TARGET_EPIC_ID}`
-   - **If the bead is standalone (no parent epic):** fall back to the "Review Findings" epic:
-     - Search for an open epic titled "Review Findings": `bd list --type epic --status open --json` and filter by title
+3. **Resolve the target epic** — findings MUST go to the parent epic of the validated bead:
+   ```bash
+   bd show {BEAD_ID} --json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0].get('parent',''))"
+   ```
+   - **If `parent` is not empty:** that IS the `{TARGET_EPIC_ID}`. Use it directly.
+   - **ONLY if `parent` is empty** (standalone task with no epic): fall back to a "Review Findings" epic:
+     - Search: `bd list --type epic --status open --json` and filter by title "Review Findings"
      - If not found, create it:
        ```bash
-       bd create "Review Findings" --type epic --description "Fallback epic for tracking findings from standalone tasks (no parent epic) identified during QA that were not addressed in the current implementation cycle." --priority 3 --labels "findings"
+       bd create "Review Findings" --type epic --description "Fallback epic for findings from standalone tasks with no parent epic." --priority 3 --labels "findings"
        ```
      - Use it as `{TARGET_EPIC_ID}`
+
+   > **CRITICAL:** Most tasks have a parent epic. Do NOT skip to the fallback. Always check `parent` first.
+
 4. Dispatch **beads-owner** using **exactly** these parameters — no more, no less:
    ```python
    Task(

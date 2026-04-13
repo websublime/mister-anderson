@@ -1,6 +1,6 @@
 ---
 name: review-task
-description: Code review gate — lists beads with needs-review label, dispatches the code-reviewer agent to analyze the implementation branch, and optionally dispatches the refactoring-supervisor to address findings. Handles the full review cycle from task selection to refactoring dispatch.
+description: Code review gate — lists beads with needs-review label, dispatches the code-reviewer agent to analyze the implementation branch, tracks findings, and routes rework back to the original implementation supervisor via /start-task.
 user_invocable: true
 ---
 
@@ -31,7 +31,7 @@ bd show {BEAD_ID} --json
 
 ## Phase 2: Read Bead Context
 
-1. Parse the bead JSON. Extract: `description`, `acceptance`, `design`, `notes`, `status`, `labels`
+1. Parse the bead JSON. Extract: `description`, `acceptance`, `design`, `notes`, `status`, `labels`, `parent`
 2. Read bead comments: `bd comments {BEAD_ID}`
 3. Verify a `COMPLETED` comment exists — if not, warn user that the implementation supervisor did not leave a completion summary
 4. Identify the implementation branch:
@@ -63,7 +63,7 @@ Task(
 After the code-reviewer completes:
 
 1. Read the REVIEW comment from bead comments: `bd comments {BEAD_ID}`
-2. Extract the verdict: `APPROVE`, `NEEDS-REFACTORING`, or `NEEDS-REWORK`
+2. Extract the verdict: `APPROVE` or `NEEDS-REWORK`
 3. Present the review summary to the user
 
 **If APPROVE:**
@@ -75,56 +75,48 @@ After the code-reviewer completes:
   ```
 - Recommend: "Run `/qa-task {BEAD_ID}` to validate spec conformity, tests, build, and lint before merging."
 
-**If NEEDS-REFACTORING:**
-- Present findings to user
-- Ask: "Do you want to dispatch the refactoring-supervisor to address these findings?"
-- If yes → proceed to Phase 6
-- If no → leave as-is for manual handling
-- Label stays `needs-review` — Martin will re-label after refactoring
-
 **If NEEDS-REWORK:**
-- Present critical findings to user
-- Inform: "This needs the implementation supervisor again — critical issues or acceptance criteria unmet. Use `/start-task {BEAD_ID}` to re-dispatch."
+- Present findings to user (critical, warnings, and suggestions)
+- Ask user: "Do you want the supervisor to continue on the current branch or create a new one? (default: current branch)"
 - Update labels:
   ```bash
   bd label remove {BEAD_ID} needs-review
   bd label add {BEAD_ID} needs-rework
   ```
-- Do NOT dispatch refactoring-supervisor — this goes back to `/start-task`
+- Inform: "Use `/start-task {BEAD_ID}` to re-dispatch. The REVIEW comment contains all findings for the supervisor to address."
+- If the user chose a new branch, note it so `/start-task` can pass the instruction to the supervisor
 
 ---
 
 ## Phase 5: Track Review Findings
 
-After the verdict is resolved (regardless of APPROVE, NEEDS-REFACTORING, or NEEDS-REWORK), extract actionable findings from the REVIEW comment and create tracked issues for anything that won't be addressed in the current cycle.
+After the verdict is resolved (regardless of APPROVE or NEEDS-REWORK), extract actionable findings from the REVIEW comment and create tracked issues for anything that won't be addressed in the current cycle.
 
 ### When to run
 
 - **APPROVE:** all non-`[GOOD]` findings are deferred — create issues for all of them
-- **APPROVE after re-review (Phase 7):** parse both the original REVIEW and the REFACTORING comment to identify remaining unaddressed findings — create issues for SKIPPED and SUGGESTION items
 - **NEEDS-REWORK:** `[CRITICAL]` and `[WARNING]` findings will be addressed via `/start-task` rework, but any `[SUGGESTION]` findings should still be tracked
 
 ### Process
 
 1. Parse the REVIEW comment for all findings that are NOT `[GOOD]`
-2. **If the refactoring-supervisor ran (Phase 6)**, also parse the REFACTORING comment:
-   - Extract all **SKIPPED** items — these are findings Martin could not fix (out of scope, architectural, risky)
-   - Extract all **DEFERRED** items — these are findings Martin deferred with `// TODO(bd-xxx)` references
-   - Remove from the REVIEW findings list any items that were **FIXED** by Martin (they're resolved)
-   - SKIPPED items always become tracked findings
-   - DEFERRED items are already tracked (Martin linked them to existing beads) — skip these
-3. Filter out findings that were already addressed (FIXED by refactoring-supervisor, or that will be addressed by NEEDS-REWORK flow — i.e., `[CRITICAL]` and `[WARNING]` when verdict is NEEDS-REWORK)
-4. Resolve the **target epic** for findings:
-   - Parse the bead JSON from Phase 2: extract `parent` field
-   - **If the bead has a parent epic:** use it as `{TARGET_EPIC_ID}`
-   - **If the bead is standalone (no parent epic):** fall back to the "Review Findings" epic:
-     - Search for an open epic titled "Review Findings": `bd list --type epic --status open --json` and filter by title
+2. Filter out findings that will be addressed by the rework flow (i.e., `[CRITICAL]` and `[WARNING]` when verdict is NEEDS-REWORK)
+3. **Resolve the target epic** — findings MUST go to the parent epic of the reviewed bead:
+   ```bash
+   bd show {BEAD_ID} --json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0].get('parent',''))"
+   ```
+   - **If `parent` is not empty:** that IS the `{TARGET_EPIC_ID}`. Use it directly.
+   - **ONLY if `parent` is empty** (standalone task with no epic): fall back to a "Review Findings" epic:
+     - Search: `bd list --type epic --status open --json` and filter by title "Review Findings"
      - If not found, create it:
        ```bash
-       bd create "Review Findings" --type epic --description "Fallback epic for tracking findings from standalone tasks (no parent epic) identified during code reviews that were not addressed in the current implementation cycle." --priority 3 --labels "findings"
+       bd create "Review Findings" --type epic --description "Fallback epic for findings from standalone tasks with no parent epic." --priority 3 --labels "findings"
        ```
      - Use it as `{TARGET_EPIC_ID}`
-5. Dispatch **beads-owner** using **exactly** these parameters — no more, no less:
+
+   > **CRITICAL:** Most tasks have a parent epic. Do NOT skip to the fallback. Always check `parent` first.
+
+4. Dispatch **beads-owner** using **exactly** these parameters — no more, no less:
    ```python
    Task(
        subagent_type="beads-owner",
@@ -132,38 +124,4 @@ After the verdict is resolved (regardless of APPROVE, NEEDS-REFACTORING, or NEED
    )
    ```
    **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
-6. Inform the user how many finding issues were created and under which epic
-
----
-
-## Phase 6: Dispatch Refactoring (Optional)
-
-Only if verdict is `NEEDS-REFACTORING` and user approves.
-
-Dispatch using **exactly** these parameters — no more, no less:
-
-```python
-Task(
-    subagent_type="refactoring-supervisor",
-    prompt="Refactor BEAD {BEAD_ID}. Read the REVIEW comment in bead comments (bd comments {BEAD_ID}) for findings from the code-reviewer. Validate each finding before applying: check for false positives, cross-reference with existing beads for deferred work, and add TODO references for issues tracked in future tasks. Only fix validated real issues."
-)
-```
-
-**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
-
----
-
-## Phase 7: Re-Review After Refactoring
-
-**MANDATORY** after the refactoring-supervisor completes. You MUST NOT skip this phase — Martin's fix needs validation before approval.
-
-1. Read Martin's REFACTORING comment: `bd comments {BEAD_ID}`
-2. Confirm the bead still has `needs-review` label (Martin adds it on completion)
-3. **Loop back to Phase 3** — re-dispatch the code-reviewer (Linus) to validate Martin's changes
-4. After Linus completes the re-review, return to **Phase 4** to process the new verdict
-
-This creates the review loop: `NEEDS-REFACTORING → Martin fixes → Linus re-reviews → new verdict`.
-
-**Do NOT auto-approve** after Martin completes. Only Linus can issue an `APPROVE` verdict. Only an `APPROVE` verdict triggers the label transition from `needs-review` to `approved`.
-
-After the re-review verdict is processed (Phase 4), proceed to **Phase 5** to track any remaining findings.
+5. Inform the user how many finding issues were created and under which epic

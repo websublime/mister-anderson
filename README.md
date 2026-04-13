@@ -107,10 +107,7 @@ flowchart TD
         R3["Dispatch Linus\ncode-reviewer"]
         R4{"Verdict?"}
         R_APP["APPROVE\nlabel: approved"]
-        R_REF["NEEDS-REFACTORING"]
-        R_REW["NEEDS-REWORK\nlabel: needs-rework"]
-        R_REF_Q{"Dispatch\nMartin?"}
-        R_REF_Y["Dispatch refactoring-supervisor\nfix validated issues"]
+        R_REW["NEEDS-REWORK\nlabel: needs-rework\nback to /start-task"]
         R5["Track review findings\nvia Fernando"]
         R5D{"Finding covered\nby existing task?"}
         R5_LINK["Link to existing task\ncomment + discovered-from dep"]
@@ -118,10 +115,7 @@ flowchart TD
 
         R1 --> R2 --> R3 --> R4
         R4 -- APPROVE --> R_APP
-        R4 -- NEEDS-REFACTORING --> R_REF --> R_REF_Q
         R4 -- NEEDS-REWORK --> R_REW
-        R_REF_Q -- Yes --> R_REF_Y --> R5
-        R_REF_Q -- No --> R5
         R_APP --> R5
         R_REW --> R5
         R5 --> R5D
@@ -208,7 +202,6 @@ User-invocable commands that orchestrate the workflow.
 | **code-reviewer.md** | Linus | Quality gate, structured review reports | Read-only reviewer |
 | **qa-gate.md** | Quinn | QA finalization: spec conformity, tests, build, lint | QA gate |
 | **beads-owner.md** | Fernando | Product owner, creates epics and issues | Task creator |
-| **refactoring-supervisor.md** | Martin | Safe code transformation, review finding validation | Implementation supervisor |
 | **discovery.md** | Daphne | Supervisor factory: detects tech stack, creates supervisors | Factory agent |
 
 ### Dynamic Supervisors (created per project)
@@ -282,20 +275,9 @@ After implementation, the supervisor marks the bead `in-review` with label `need
 
 1. **Linus** (code-reviewer) analyzes the branch diff against acceptance criteria
 2. Each finding has a severity: `CRITICAL`, `WARNING`, `SUGGESTION`, `GOOD`
-3. Verdict: `APPROVE`, `NEEDS-REFACTORING`, or `NEEDS-REWORK`
+3. Verdict: `APPROVE` or `NEEDS-REWORK`
 4. Non-`[GOOD]` findings that aren't addressed in the current cycle are automatically tracked as issues under the **parent epic** of the reviewed task (falls back to a "Review Findings" epic for standalone tasks) with `finding:{severity}` labels
-
-### Smart Refactoring
-
-If the verdict is `NEEDS-REFACTORING`, **Martin** (refactoring-supervisor) doesn't blindly apply fixes. For each finding he:
-
-1. **Validates** — is it a real issue or false positive?
-2. **Cross-references beads** — is it already tracked in a future task?
-3. **If tracked** — adds a `// TODO(bd-xxx): description` instead of fixing
-4. **If real** — applies the fix with tests
-5. **If risky** — skips and logs why
-
-After Martin completes, any **SKIPPED** findings are automatically tracked as issues under the parent epic of the reviewed task (same flow as review findings). **DEFERRED** items are already linked to existing beads and don't create duplicates.
+5. If `NEEDS-REWORK`, the task goes back to the original implementation supervisor via `/start-task` — the specialist who built it is best positioned to fix the findings
 
 ### Comment Trail
 
@@ -307,7 +289,6 @@ DECISION:      (supervisor)  -- non-trivial implementation choices
 DEVIATION:     (supervisor)  -- where implementation differs from spec and why
 COMPLETED:     (supervisor)  -- what was implemented and how
 REVIEW:        (Linus)       -- code quality findings with severities and verdict
-REFACTORING:   (Martin)      -- what was fixed, deferred, or skipped
 QA:            (Quinn)       -- spec conformity, tests, build, lint, verdict
 ```
 
@@ -351,7 +332,6 @@ mister-anderson/
 |   |-- code-reviewer.md         # Linus - quality gate (read-only)
 |   |-- qa-gate.md               # Quinn - QA finalization gate
 |   |-- beads-owner.md           # Fernando - product owner (task creator)
-|   |-- refactoring-supervisor.md # Martin - safe refactoring (implementation)
 |   +-- discovery.md             # Daphne - supervisor factory
 |-- hooks/
 |   |-- hooks.json               # Hook configuration
@@ -458,7 +438,7 @@ Setup requires an **existing project skeleton** — the Discovery agent scans fo
 1. Beads task tracking is initialized (`bd init`)
 2. Daphne (Discovery agent) scans your codebase to detect tech stacks (package.json, Cargo.toml, go.mod, etc.)
 3. For each detected stack, a specialized supervisor is created in `.claude/agents/` by fetching from the external directory and injecting the beads workflow
-4. Core agents are copied: product-manager, architect, research, code-reviewer, qa-gate, beads-owner, refactoring-supervisor, discovery
+4. Core agents are copied: product-manager, architect, research, code-reviewer, qa-gate, beads-owner, discovery
 5. Templates are installed: CLAUDE.md, AGENTS.md, BEADS-WORKFLOW.md
 6. Hooks are configured for discipline enforcement and session context
 
@@ -607,15 +587,11 @@ Shows beads with the `needs-review` label. Pick which one to review.
 - Labels updated: `needs-review` removed, `approved` added
 - Ready for QA validation — run `/qa-task bd-xxx`
 
-**NEEDS-REFACTORING** — Minor issues, fixable without re-implementation:
-- You're shown the findings and asked if you want to dispatch Martin (refactoring-supervisor)
-- If yes, Martin validates each finding: checks for false positives, cross-references with future beads, adds `// TODO(bd-xxx)` for tracked issues, and only fixes validated real issues
-- After refactoring, Martin logs a `REFACTORING:` comment and the task goes through review again
-
-**NEEDS-REWORK** — Critical issues or acceptance criteria unmet:
+**NEEDS-REWORK** — Issues found (critical, warnings, or acceptance criteria unmet):
 - Labels updated: `needs-review` removed, `needs-rework` added
-- You're told to use `/start-task bd-xxx` to re-dispatch the implementation supervisor
+- You're told to use `/start-task bd-xxx` to re-dispatch the original implementation supervisor
 - The existing branch is preserved — `/start-task` will detect it and ask if you want to continue on it
+- The REVIEW comment contains all findings — the supervisor reads it to know exactly what to fix
 
 **After any verdict — Track Review Findings:**
 - All non-`[GOOD]` findings that won't be addressed in the current cycle are extracted from the REVIEW comment
@@ -640,25 +616,6 @@ When a code review returns `NEEDS-REWORK`, the task goes back to the implementat
 4. The `needs-rework` label tells everyone this is a second pass
 
 After the supervisor finishes, the task goes back to `in-review` with `needs-review` label, and you run `/review-task` again.
-
----
-
-### Handling NEEDS-REFACTORING
-
-When a code review returns `NEEDS-REFACTORING`, the issues are minor enough that Martin (refactoring-supervisor) can address them without full re-implementation.
-
-During `/review-task`, after seeing the findings, you're asked:
-
-> "Do you want to dispatch the refactoring-supervisor to address these findings?"
-
-**If yes**, Martin is dispatched. For each finding he:
-
-1. **Reads the code in context** — Is this actually a problem? If not → marks as `FALSE-POSITIVE`
-2. **Checks existing beads** — Is this already tracked in a future task? If yes → adds `// TODO(bd-xxx): description` and marks as `DEFERRED`
-3. **Assesses risk** — Would fixing this break other things or go beyond scope? If risky → marks as `SKIPPED` with reason
-4. **Applies the fix** — Only for validated real issues → marks as `FIXED`
-
-Martin logs a structured `REFACTORING:` comment to the bead with the disposition of every finding. After refactoring, the task goes through another review cycle.
 
 ---
 
@@ -815,7 +772,7 @@ To update:
 
 **What the plugin provides automatically** (no local copy needed):
 - Skills — all workflow commands
-- 8 core agents (architect, product-manager, research, discovery, code-reviewer, qa-gate, refactoring-supervisor, beads-owner)
+- 7 core agents (architect, product-manager, research, discovery, code-reviewer, qa-gate, beads-owner)
 - Hook scripts (session-start, discipline injection)
 
 **What stays local** (never touched):
@@ -844,7 +801,6 @@ DECISION:      (supervisor)  -- Non-trivial implementation choices and their rea
 DEVIATION:     (supervisor)  -- Where implementation differs from spec and why
 COMPLETED:     (supervisor)  -- What was implemented, files changed, decisions made
 REVIEW:        (Linus)       -- Findings with severities and overall verdict
-REFACTORING:   (Martin)      -- What was fixed, deferred, or skipped from review
 QA:            (Quinn)       -- Spec conformity, tests, build, lint, final verdict
 ```
 

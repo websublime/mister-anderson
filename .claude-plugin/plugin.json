@@ -1,7 +1,7 @@
 {
   "name": "mister-anderson",
   "description": "Beads development for humans — a structured, human-controlled development pipeline with task tracking, code review gates, and multi-agent orchestration",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "author": {
     "name": "Miguel Ramos",
     "email": "miguel.ramos@websublime.com",
@@ -18,7 +18,6 @@
     "./agents/code-reviewer.md",
     "./agents/qa-gate.md",
     "./agents/beads-owner.md",
-    "./agents/refactoring-supervisor.md",
     "./agents/discovery.md"
   ]
 }

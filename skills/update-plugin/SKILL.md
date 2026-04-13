@@ -19,7 +19,7 @@ Since v0.1.0, the plugin system provides skills, core agents, and hooks automati
 
 ### Provided by Plugin (no local copy needed)
 - **Skills** — all workflow commands
-- **Core agents** — architect, product-manager, research, discovery, code-reviewer, qa-gate, refactoring-supervisor, beads-owner
+- **Core agents** — architect, product-manager, research, discovery, code-reviewer, qa-gate, beads-owner
 - **Hooks** — session-start dashboard, discipline injection
 
 ### Local to Project (never touched by update)
@@ -74,7 +74,7 @@ LEGACY_HOOKS=$(ls .claude/hooks/ 2>/dev/null | wc -l | tr -d '[:space:]')
 
 # Check for legacy core agents (NOT dynamic supervisors)
 LEGACY_AGENTS=0
-CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate beads-owner refactoring-supervisor)
+CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate beads-owner)
 for agent in "${CORE_AGENTS[@]}"; do
   [[ -f ".claude/agents/${agent}.md" ]] && LEGACY_AGENTS=$((LEGACY_AGENTS + 1))
 done
@@ -86,8 +86,8 @@ echo "Legacy core agents: $LEGACY_AGENTS"
 
 **List dynamic supervisors** that will be PRESERVED:
 ```bash
-# All *-supervisor.md EXCEPT refactoring-supervisor.md (core agent)
-ls .claude/agents/*-supervisor.md 2>/dev/null | grep -v refactoring-supervisor.md
+# All *-supervisor.md are dynamic (created by Discovery)
+ls .claude/agents/*-supervisor.md 2>/dev/null | grep -v "^$"
 ```
 
 **If no legacy files found:** Inform user the project is clean. Skip to Phase 4.
@@ -127,13 +127,15 @@ rm -rf .claude/hooks/
 
 ### 3.3 Remove legacy core agents (preserve dynamic supervisors)
 ```bash
-CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate beads-owner refactoring-supervisor)
+CORE_AGENTS=(architect product-manager research discovery code-reviewer qa-gate beads-owner)
 for agent in "${CORE_AGENTS[@]}"; do
   rm -f ".claude/agents/${agent}.md"
 done
+# Clean up removed agents from older versions
+rm -f ".claude/agents/refactoring-supervisor.md"
 ```
 
-**Important:** Do NOT remove `*-supervisor.md` files created by Discovery — only remove the 8 core agents listed above.
+**Important:** Do NOT remove `*-supervisor.md` files created by Discovery — only remove the core agents listed above and deprecated agents.
 
 ### 3.4 Update version file
 ```bash
@@ -146,7 +148,7 @@ echo "{NEW_VERSION}" > ./.claude/.mister-anderson-version
 
 1. **Verify dynamic supervisors are intact:**
    ```bash
-   ls .claude/agents/*-supervisor.md 2>/dev/null | grep -v refactoring-supervisor.md
+   ls .claude/agents/*-supervisor.md 2>/dev/null | grep -v "^$"
    ```
 
 2. **Verify no legacy duplicates remain:**
