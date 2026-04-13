@@ -1,6 +1,27 @@
 <beads-workflow>
 <requirement>You MUST follow this branch-per-task workflow for ALL implementation work.</requirement>
 
+<lifecycle>
+## Bead Lifecycle — Status and Labels
+
+```
+Status:   open ──> in_progress ──> in-review ──> (closed by user)
+                       ^               │
+                       │               v
+                       └──── needs-rework (rework cycle)
+
+Labels added at each stage:
+  in-review    → needs-review
+  review pass  → approved (needs-review removed)
+  review fail  → needs-rework (needs-review removed, status → in_progress)
+  qa pass      → qa-passed
+  qa fail      → needs-rework (approved removed, status → in_progress)
+  rework done  → needs-review (needs-rework removed)
+```
+
+You only control: `open → in_progress → in-review + needs-review`. Everything else is managed by the orchestrator and review/QA skills.
+</lifecycle>
+
 <on-task-start>
 1. **Parse task parameters from orchestrator or user:**
    - BEAD_ID: Your task ID (e.g., BD-001 for standalone, BD-001.2 for epic child, BD-001.2.1 for sub task)
@@ -71,43 +92,51 @@ If the orchestrator's approach would break something, explain what you found and
 </during-implementation>
 
 <on-completion>
-WARNING: You will be BLOCKED if you skip any step. Execute ALL in order:
+WARNING: ALL steps below are MANDATORY. Skipping any step breaks the review pipeline.
 
 1. **Commit all changes:**
    ```bash
    git add -A && git commit -m "..."
    ```
 
-2. **Push to remote:**
+2. **Log completion summary (MANDATORY — consumed by code-reviewer):**
    ```bash
-   git push origin bd-{BEAD_ID}
+   bd comments add {BEAD_ID} "COMPLETED:
+   Summary: [1-2 sentences describing what was implemented/fixed]
+   Files changed: [list of files modified, created, or deleted]
+   Decisions: [count of DECISION comments logged, or 'none']
+   Deviations: [count of DEVIATION comments logged, or 'none — implemented as spec']
+   Tests: [what was tested and how — functional verification, unit tests, etc.]"
    ```
 
-3. **Optionally log learnings:**
+3. **Push to remote:**
    ```bash
-   bd comments add {BEAD_ID} "LEARNED: [key technical insight]"
+   git push origin $(git branch --show-current)
    ```
-   If you discovered a gotcha or pattern worth remembering, log it. Not required.
 
-4. **Add review label:**
+4. **Clean up stale labels (if rework cycle):**
+   ```bash
+   bd label remove {BEAD_ID} needs-rework 2>/dev/null || true
+   ```
+
+5. **Add review label:**
    ```bash
    bd label add {BEAD_ID} needs-review
    ```
 
-5. **Mark status:**
+6. **Mark status:**
    ```bash
    bd update {BEAD_ID} --status in-review
    ```
 
-6. **Return completion report:**
+7. **Return completion report:**
    ```
    BEAD {BEAD_ID} COMPLETE
+   Branch: [branch name]
    Files: [names only]
-   Tests: pass
+   Tests: [pass/fail + how verified]
    Summary: [1 sentence]
    ```
-
-The SubagentStop hook verifies: branch exists, no uncommitted changes, pushed to remote, bead status updated, needs-review label added.
 </on-completion>
 
 <banned>

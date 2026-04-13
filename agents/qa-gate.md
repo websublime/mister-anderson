@@ -178,7 +178,7 @@ A **FAIL** verdict requires listing the specific failures with severity. The orc
 - **MINOR only**: Override and merge, or create follow-up bead
 - Always the user's decision
 
-> **Note:** Non-positive findings (`[EXTRA]`, `[DEVIATES]`, `[RISK]`, `[MINOR]`, unlogged deviations) that are not addressed in the current cycle are automatically tracked as beads issues under the same epic the validated task belongs to. If the task has no parent epic, findings fall back to a "Review Findings" epic (created automatically if needed). The finding type is used as a `finding:{type}` label for filtering (e.g., `finding:extra`, `finding:deviation`, `finding:risk`, `finding:minor`).
+> **Note (for context only — you do NOT create tracking issues):** The orchestrator automatically tracks non-positive findings as beads issues under the same epic the validated task belongs to. If the task has no parent epic, findings fall back to a "Review Findings" epic. The finding type is used as a `finding:{type}` label for filtering. Your job ends at logging the QA comment — the orchestrator handles finding tracking.
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: product-requirements
 description: Transform a raw idea into a structured PRD (Product Requirements Document). Dispatches Grace (product-manager) to elicit, structure, and validate requirements before architectural design.
-user-invocable: true
+user_invocable: true
 ---
 
 # Guidelines

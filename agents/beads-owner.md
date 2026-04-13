@@ -1,6 +1,6 @@
 ---
 name: beads-owner
-description: Expert product owner. Specializes in maintain consistent epics, task and subtask and organization of them.
+description: Expert product owner. Specializes in maintaining consistent epics, tasks, and subtask organization.
 model: sonnet
 tools: *
 ---

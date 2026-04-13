@@ -4,7 +4,7 @@
 
 Check compatibility:
 - Changelog: https://github.com/steveyegge/beads/blob/main/CHANGELOG.md
-- Run `/beads-compat` to check installed version
+- Run `bd --version` to check installed version
 
 ## Issue Tracking with bd (beads)
 
@@ -141,7 +141,7 @@ Get more info from reference: https://github.com/steveyegge/beads/raw/refs/heads
 - ✅ Always use `--json` flag for programmatic use
 - ✅ Link discovered work with `discovered-from` dependencies
 - ✅ Check `bd ready` before asking "what should I work on?"
-- ✅ Store AI planning docs in `history/` directory
+- ✅ Store AI planning docs in `docs/` directory
 - ✅ Run `bd <cmd> --help` to discover available flags
 - ❌ Do NOT create markdown files as TODO lists
 - ❌ Do NOT use external issue trackers
@@ -154,7 +154,7 @@ For more details, see README.md and QUICKSTART.md.
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
-**Branch Strategy:** Active v1.0.0 development targets the `next` branch. Only hotfixes target `main`.
+**Branch Strategy:** Feature branches merge into `main` unless the project uses a different strategy (check CLAUDE.md for project-specific branching).
 
 **MANDATORY WORKFLOW:**
 

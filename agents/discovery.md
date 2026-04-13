@@ -5,6 +5,7 @@ model: sonnet
 tools:
   - Read
   - Write
+  - Edit
   - Glob
   - Grep
   - Bash
@@ -230,7 +231,7 @@ tools: *
 
 ```
 BEAD {BEAD_ID} COMPLETE
-Branch: <BRACH-NAME>
+Branch: <BRANCH-NAME>
 Files: [filename1, filename2]
 Tests: pass
 Summary: [1 sentence max]
@@ -350,7 +351,7 @@ SUPERVISORS_CREATED:
 FILTERING_APPLIED:
   - Code examples removed: Yes
   - Tutorial sections removed: Yes
-  - All supervisors < 150 lines: [Yes/No - list any exceptions]
+  - All supervisors < 220 lines: [Yes/No - list any exceptions]
 
 BEADS_WORKFLOW_INJECTED: Yes (all implementation agents)
 DISCIPLINE_SKILL_REQUIRED: Yes (in beads workflow)

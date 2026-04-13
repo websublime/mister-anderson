@@ -78,10 +78,11 @@ After the code-reviewer completes:
 **If NEEDS-REWORK:**
 - Present findings to user (critical, warnings, and suggestions)
 - Ask user: "Do you want the supervisor to continue on the current branch or create a new one? (default: current branch)"
-- Update labels:
+- Update labels and status:
   ```bash
   bd label remove {BEAD_ID} needs-review
   bd label add {BEAD_ID} needs-rework
+  bd update {BEAD_ID} --status in_progress
   ```
 - Inform: "Use `/start-task {BEAD_ID}` to re-dispatch. The REVIEW comment contains all findings for the supervisor to address."
 - If the user chose a new branch, note it so `/start-task` can pass the instruction to the supervisor

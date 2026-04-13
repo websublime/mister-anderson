@@ -1,7 +1,7 @@
 ---
-name: setup-beads-project
+name: setup-project
 description: Bootstrap project orchestration with beads task tracking.
-user-invocable: true
+user_invocable: true
 ---
 
 # Setup project
@@ -32,7 +32,7 @@ The mister-anderson plugin (installed via Claude Code plugin system) automatical
 
 ## Requirements
 
-- **beads CLI** (>= 0.56): Install from https://github.com/steveyegge/beads/tree/main
+- **beads CLI** (>= 0.60): Install from https://github.com/steveyegge/beads/tree/main
 - **Dolt SQL server**: beads 0.56+ requires a running Dolt sql-server (port 3307 or 3306)
 
 Test if `bd --version` works on terminal, if not stop all the setup process and tell user to install beads from here: https://github.com/steveyegge/beads/tree/main
@@ -165,7 +165,7 @@ Task(
 Write the installed plugin version to `.claude/.mister-anderson-version` so the session-start hook can detect when updates are available.
 
 ```bash
-echo "0.1.0" > ./.claude/.mister-anderson-version
+echo "0.2.1" > ./.claude/.mister-anderson-version
 ```
 
 > **Important:** When bumping the plugin version, update this step to match the new version in `plugin.json`.

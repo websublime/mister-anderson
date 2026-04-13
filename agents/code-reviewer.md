@@ -121,7 +121,7 @@ Security: [PASS/issues found — list if any]
 Performance: [PASS/concerns — list if any]
 Tests: [PASS/gaps — list uncovered paths]
 
-Verdict: [APPROVE / NEEDS-REFACTORING / NEEDS-REWORK]"
+Verdict: [APPROVE / NEEDS-REWORK]"
 ```
 
 ### Severity Levels
@@ -133,7 +133,7 @@ Verdict: [APPROVE / NEEDS-REFACTORING / NEEDS-REWORK]"
 | **SUGGESTION** | Nice to have — better naming, minor optimization, style | Fix if trivial, otherwise skip | `finding:suggestion` |
 | **GOOD** | Positive feedback — well-structured code, good test coverage | No action — acknowledgement | — |
 
-> **Note:** Non-GOOD findings that are not addressed in the current review cycle are automatically tracked as beads issues under the same epic the reviewed task belongs to. If the task has no parent epic, findings fall back to a "Review Findings" epic (created automatically if needed). The severity tag is used as a `finding:{severity}` label for filtering.
+> **Note (for context only — you do NOT create tracking issues):** The orchestrator automatically tracks non-GOOD findings as beads issues under the same epic the reviewed task belongs to. If the task has no parent epic, findings fall back to a "Review Findings" epic. The severity tag is used as a `finding:{severity}` label for filtering. Your job ends at logging the REVIEW comment — the orchestrator handles the rest.
 
 ### Verdicts
 
@@ -176,7 +176,7 @@ SECURITY: PASS/ISSUES
 PERFORMANCE: PASS/CONCERNS
 TESTS: PASS/GAPS
 
-VERDICT: APPROVE / NEEDS-REFACTORING / NEEDS-REWORK
+VERDICT: APPROVE / NEEDS-REWORK
 
 REVIEW_LOGGED: Yes — orchestrator can read via bd comments {BEAD_ID}
 ```

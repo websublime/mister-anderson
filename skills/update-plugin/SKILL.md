@@ -1,7 +1,7 @@
 ---
 name: update-plugin
 description: Update mister-anderson plugin and clean up legacy local copies that are now provided by the plugin system.
-user-invocable: true
+user_invocable: true
 ---
 
 # Update Plugin

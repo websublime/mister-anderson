@@ -1,7 +1,7 @@
 ---
 name: architect-solution
 description: design solutions and create implementation plans. You DO NOT implement code - you create design docs and specs for supervisors.
-user-invocable: true
+user_invocable: true
 ---
 
 # Guidelines

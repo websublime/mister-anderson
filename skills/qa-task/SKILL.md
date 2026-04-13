@@ -1,7 +1,7 @@
 ---
 name: qa-task
 description: QA finalization gate — validates spec conformity, runs tests/build/lint, and produces a structured QA report. Dispatched after code review approves. Last gate before human merge.
-user-invocable: true
+user_invocable: true
 ---
 
 # QA Task
@@ -33,7 +33,7 @@ If the bead does NOT have the `approved` label, warn the user: "This task hasn't
 
 ## Phase 2: Read Bead Context
 
-1. Parse the bead JSON. Extract: `description`, `acceptance`, `design`, `notes`, `status`, `labels`
+1. Parse the bead JSON. Extract: `description`, `acceptance`, `design`, `notes`, `status`, `labels`, `parent`
 2. Read bead comments: `bd comments {BEAD_ID}`
 3. Verify a `REVIEW` comment exists with verdict `APPROVE` — if not, warn the user
 4. Locate the spec/design doc:
@@ -94,6 +94,7 @@ After the QA agent completes:
   # If rework:
   bd label remove {BEAD_ID} approved
   bd label add {BEAD_ID} needs-rework
+  bd update {BEAD_ID} --status in_progress
 
   # If follow-up or override:
   bd label add {BEAD_ID} qa-override

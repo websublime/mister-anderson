@@ -1,7 +1,7 @@
 ---
 name: beads-product-owner
-description: define product requirements and user stories for the requested solution. You DO NOT design solutions - you create product requirements and user stories for agents.
-user-invocable: true
+description: Decompose a PRD or product plan into structured epics and issues. Requires an existing product requirements document. For ad-hoc single issues, use /create-bead-issues instead.
+user_invocable: true
 ---
 
 # Guidelines
@@ -10,15 +10,23 @@ If the user provides $ARGUMENTS, analyze them first and ask for clarification if
 
 **CRITICAL**:
 - It's mandatory that a product requirement be shared with you. If not ask the user about it.
-- Ask the user if he already have defined a plan for the solution, if yes, ask him where you can find.
-- User can share the all product plan or a feature plan. 
+- Ask the user if they already have a plan for the solution. If yes, ask where to find it.
+- User can share the full product plan or a feature plan.
+
+## Before Dispatching
+
+1. **Locate the product requirements** — ask user for the path (e.g., `docs/prd/PRD-feature.md`)
+2. **Locate the plan (if any)** — ask user for the path (e.g., `docs/spec/SPEC-feature.md`)
+3. Read both documents to confirm they exist
+
+## Dispatch
 
 Dispatch using **exactly** these parameters — no more, no less:
 
 ```python
 Task(
     subagent_type="beads-owner",
-    prompt="Create epics and issues for the requested solution based on the provided product requirements and user stories. If a product plan is provided, use it as a reference to create the epics and issues."
+    prompt="Create epics and issues for the requested solution. Product requirements: {prd_path}. Plan/spec: {plan_path_or_none}. Read both documents for full context before creating issues."
 )
 ```
 

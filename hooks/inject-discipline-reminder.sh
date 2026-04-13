@@ -20,7 +20,7 @@ if [[ "$SUBAGENT_TYPE" == *"-supervisor"* ]]; then
   cat << 'EOF'
 <system-reminder>
 SUPERVISOR DISPATCH: Before implementing, invoke `/subagents-discipline` skill.
-This ensures verification-first development with DEMO blocks.
+This loads mandatory Rules 0-6 for verification-first development.
 </system-reminder>
 EOF
 fi
