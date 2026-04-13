@@ -114,7 +114,7 @@ flowchart TD
         R5["Track review findings\nvia Fernando"]
         R5D{"Finding covered\nby existing task?"}
         R5_LINK["Link to existing task\ncomment + discovered-from dep"]
-        R5_NEW["Create issue under\nReview Findings epic\nlabel: finding:severity"]
+        R5_NEW["Create issue under\nparent epic (or Review Findings fallback)\nlabel: finding:severity"]
 
         R1 --> R2 --> R3 --> R4
         R4 -- APPROVE --> R_APP
@@ -142,7 +142,7 @@ flowchart TD
         Q5["Track QA findings\nvia Fernando"]
         Q5D{"Finding covered\nby existing task?"}
         Q5_LINK["Link to existing task\ncomment + discovered-from dep"]
-        Q5_NEW["Create issue under\nReview Findings epic\nlabel: finding:type"]
+        Q5_NEW["Create issue under\nparent epic (or Review Findings fallback)\nlabel: finding:type"]
 
         Q1 --> Q2 --> Q3 --> Q4
         Q4 -- PASS --> Q_PASS --> Q5
@@ -283,7 +283,7 @@ After implementation, the supervisor marks the bead `in-review` with label `need
 1. **Linus** (code-reviewer) analyzes the branch diff against acceptance criteria
 2. Each finding has a severity: `CRITICAL`, `WARNING`, `SUGGESTION`, `GOOD`
 3. Verdict: `APPROVE`, `NEEDS-REFACTORING`, or `NEEDS-REWORK`
-4. Non-`[GOOD]` findings that aren't addressed in the current cycle are automatically tracked as issues under the **Review Findings** epic with `finding:{severity}` labels
+4. Non-`[GOOD]` findings that aren't addressed in the current cycle are automatically tracked as issues under the **parent epic** of the reviewed task (falls back to a "Review Findings" epic for standalone tasks) with `finding:{severity}` labels
 
 ### Smart Refactoring
 
@@ -295,7 +295,7 @@ If the verdict is `NEEDS-REFACTORING`, **Martin** (refactoring-supervisor) doesn
 4. **If real** — applies the fix with tests
 5. **If risky** — skips and logs why
 
-After Martin completes, any **SKIPPED** findings are automatically tracked as issues under the Review Findings epic (same flow as review findings). **DEFERRED** items are already linked to existing beads and don't create duplicates.
+After Martin completes, any **SKIPPED** findings are automatically tracked as issues under the parent epic of the reviewed task (same flow as review findings). **DEFERRED** items are already linked to existing beads and don't create duplicates.
 
 ### Comment Trail
 
@@ -620,7 +620,7 @@ Shows beads with the `needs-review` label. Pick which one to review.
 **After any verdict — Track Review Findings:**
 - All non-`[GOOD]` findings that won't be addressed in the current cycle are extracted from the REVIEW comment
 - Fernando (beads-owner) checks each finding against existing open tasks to avoid duplicates — if a finding is already covered by a future task, he adds a comment and `discovered-from` link to that task instead of creating a new one
-- Unmatched findings get a new issue under the **Review Findings** epic with `finding:{severity}` label, `discovered-from` dependency, and priority mapped from severity (P3/P2/P1)
+- Unmatched findings get a new issue under the **parent epic** of the reviewed task with `finding:{severity}` label, `discovered-from` dependency, and priority mapped from severity (P3/P2/P1). Standalone tasks (no parent epic) fall back to a "Review Findings" epic
 - This ensures suggestions are never lost while avoiding duplicate tracking
 
 ---
@@ -701,7 +701,7 @@ Shows beads with the `approved` label. Pick which one to QA.
 **After any verdict — Track QA Findings:**
 - All non-positive findings (`[EXTRA]`, `[DEVIATES]`, `[RISK]`, `[MINOR]`, unlogged deviations) that won't be addressed in the current cycle are extracted from the QA comment
 - Fernando (beads-owner) checks each finding against existing open tasks to avoid duplicates — if already covered, he links back with a comment and `discovered-from` dependency instead of creating a new issue
-- Unmatched findings get a new issue under the **Review Findings** epic (same epic used by `/review-task`) with `finding:{type}` label, `discovered-from` dependency, and priority mapped from type (P3/P2/P1)
+- Unmatched findings get a new issue under the **parent epic** of the validated task with `finding:{type}` label, `discovered-from` dependency, and priority mapped from type (P3/P2/P1). Standalone tasks (no parent epic) fall back to a "Review Findings" epic
 
 ---
 
