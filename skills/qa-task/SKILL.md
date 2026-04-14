@@ -1,6 +1,6 @@
 ---
 name: qa-task
-description: QA finalization gate — validates spec conformity, runs tests/build/lint, and produces a structured QA report. Dispatched after code review approves. Last gate before human merge.
+description: QA finalization gate — validates spec conformity, runs tests/build/lint, produces a structured QA report, and auto-dispatches the implementation supervisor for rework (with confirmation) when the user chooses rework on a FAIL verdict. Last gate before human merge.
 user_invocable: true
 ---
 
@@ -85,10 +85,9 @@ After the QA agent completes:
 **If FAIL:**
 - Present the specific failure reasons to the user
 - Ask user how to proceed:
-  - **Rework**: "Send back to `/start-task {BEAD_ID}` for the supervisor to address the gaps"
-  - **Follow-up**: "Create a new bead for the gaps and merge this as-is"
-  - **Override**: "Merge anyway — user's decision"
-- **If rework:** also ask: "Do you want the supervisor to continue on the current branch or create a new one? (default: current branch)"
+  - **Rework**: address the gaps — auto-dispatches the implementation supervisor in the same session
+  - **Follow-up**: create a new bead for the gaps and merge this as-is
+  - **Override**: merge anyway — user's decision
 - Update labels based on user choice:
   ```bash
   # If rework:
@@ -99,7 +98,15 @@ After the QA agent completes:
   # If follow-up or override:
   bd label add {BEAD_ID} qa-override
   ```
-- If rework and the user chose a new branch, note it so `/start-task` can pass the instruction to the supervisor
+- **If rework:** also identify the current branch for the bead:
+  ```bash
+  git branch -a | grep {BEAD_ID}
+  ```
+  Then ask: "Continue on existing branch `{branch-name}` or create a fresh branch from a base? (default: continue current)"
+  - If **continue**: store `{REWORK_BRANCH_INSTRUCTION}` = `"Continue work on existing branch {branch-name}."`
+  - If **fresh**: ask "Which base branch? (default: main)", store `{REWORK_BRANCH_INSTRUCTION}` = `"Create a fresh branch from {BASE_BRANCH} — run git checkout {BASE_BRANCH} before creating the new feature branch."`
+  Proceed to Phase 5 (track findings), then Phase 6 (auto-dispatch supervisor).
+- **If follow-up or override:** proceed to Phase 5 only; skip Phase 6.
 
 ---
 
@@ -110,7 +117,7 @@ After the verdict is resolved (regardless of PASS or FAIL), extract actionable f
 ### When to run
 
 - **PASS:** all non-positive findings (`[EXTRA]`, `[DEVIATES]`, `[RISK]`, unlogged deviations) are deferred — create issues for all of them
-- **FAIL + rework:** `[BLOCKER]` and `[MAJOR]` failures will be addressed via `/start-task` rework, but `[MINOR]` failures, `[EXTRA]`, `[RISK]`, and unlogged deviations should still be tracked
+- **FAIL + rework:** `[BLOCKER]` and `[MAJOR]` failures will be addressed by the auto-dispatched supervisor in Phase 6, but `[MINOR]` failures, `[EXTRA]`, `[RISK]`, and unlogged deviations should still be tracked
 - **FAIL + follow-up/override:** all non-positive findings should be tracked
 
 ### Process
@@ -141,3 +148,55 @@ After the verdict is resolved (regardless of PASS or FAIL), extract actionable f
    ```
    **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 5. Inform the user how many finding issues were created and under which epic
+
+---
+
+## Phase 6: Auto-Dispatch Supervisor (FAIL + rework only)
+
+**Skip this phase entirely when verdict is PASS, or when user chose follow-up/override on a FAIL.**
+
+When the user chose `rework` on a FAIL, re-dispatch the implementation supervisor in the same session instead of asking them to run `/start-task`. This preserves flow and avoids re-entering the orchestration cycle from scratch.
+
+### 6.1 Resolve Supervisor
+
+1. Read the `assignee` field from the bead JSON (already fetched in Phase 2) — this contains the supervisor name (e.g., `rust-supervisor`).
+2. **If `assignee` is set and non-empty:**
+   - Verify the agent file exists: check for `.claude/agents/{assignee}.md`
+   - If file exists → supervisor resolved, proceed to 6.2
+   - If file NOT found → warn user the specified supervisor does not exist, fall through to manual selection
+3. **If `assignee` is empty or unset, OR the file was missing:**
+   - List available implementation supervisors: find all `*-supervisor.md` files in `.claude/agents/`
+   - Present the list and ask: "Which supervisor should handle this rework? (or type `skip` to stop and run manually)"
+   - If user types `skip` → inform "Run `/start-task {BEAD_ID}` when ready." and stop
+   - Otherwise → supervisor resolved
+
+### 6.2 Confirm Before Dispatch
+
+Present a one-line summary and wait for explicit confirmation:
+
+```
+Ready to dispatch {resolved-supervisor} for QA rework of {BEAD_ID}: "{bead title}"
+  Branch: {REWORK_BRANCH_INSTRUCTION summary}
+  Failures to address: {N} BLOCKER + {M} MAJOR (MINOR/EXTRA/RISK tracked separately in epic)
+
+Proceed? [y/n]
+```
+
+**If user answers `n` or anything other than `y`/`yes`:** inform "OK, rework paused. Run `/start-task {BEAD_ID}` when ready." and stop. Do NOT dispatch.
+
+**If user confirms:** proceed to 6.3.
+
+### 6.3 Dispatch Supervisor
+
+Dispatch the resolved supervisor using **exactly** these parameters — no more, no less:
+
+```python
+Task(
+    subagent_type="{resolved-supervisor}",
+    prompt="QA rework for BEAD {BEAD_ID}. {REWORK_BRANCH_INSTRUCTION} Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context. The latest QA comment contains BLOCKER and MAJOR failures that MUST be addressed in this cycle — MINOR failures, EXTRA findings, RISK notes, and unlogged deviations have been tracked as separate finding issues in the parent epic and are out of scope for this rework. After addressing failures, log a COMPLETED comment summarizing what was fixed."
+)
+```
+
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
+
+The `PreToolUse` hook automatically injects the discipline reminder because the agent name ends in `-supervisor`.

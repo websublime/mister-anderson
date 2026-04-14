@@ -1,6 +1,6 @@
 ---
 name: review-task
-description: Code review gate — lists beads with needs-review label, dispatches the code-reviewer agent to analyze the implementation branch, tracks findings, and routes rework back to the original implementation supervisor via /start-task.
+description: Code review gate — lists beads with needs-review label, dispatches the code-reviewer agent to analyze the implementation branch, tracks findings, and auto-dispatches the implementation supervisor for rework (with confirmation) when verdict is NEEDS-REWORK.
 user_invocable: true
 ---
 
@@ -77,15 +77,20 @@ After the code-reviewer completes:
 
 **If NEEDS-REWORK:**
 - Present findings to user (critical, warnings, and suggestions)
-- Ask user: "Do you want the supervisor to continue on the current branch or create a new one? (default: current branch)"
 - Update labels and status:
   ```bash
   bd label remove {BEAD_ID} needs-review
   bd label add {BEAD_ID} needs-rework
   bd update {BEAD_ID} --status in_progress
   ```
-- Inform: "Use `/start-task {BEAD_ID}` to re-dispatch. The REVIEW comment contains all findings for the supervisor to address."
-- If the user chose a new branch, note it so `/start-task` can pass the instruction to the supervisor
+- Identify the current branch for the bead:
+  ```bash
+  git branch -a | grep {BEAD_ID}
+  ```
+- Ask user: "Continue on existing branch `{branch-name}` or create a fresh branch from a base? (default: continue current)"
+  - If **continue**: store `{REWORK_BRANCH_INSTRUCTION}` = `"Continue work on existing branch {branch-name}."`
+  - If **fresh**: ask "Which base branch? (default: main)", store `{REWORK_BRANCH_INSTRUCTION}` = `"Create a fresh branch from {BASE_BRANCH} — run git checkout {BASE_BRANCH} before creating the new feature branch."`
+- Proceed to Phase 5 (track suggestions), then Phase 6 (auto-dispatch supervisor).
 
 ---
 
@@ -96,7 +101,7 @@ After the verdict is resolved (regardless of APPROVE or NEEDS-REWORK), extract a
 ### When to run
 
 - **APPROVE:** all non-`[GOOD]` findings are deferred — create issues for all of them
-- **NEEDS-REWORK:** `[CRITICAL]` and `[WARNING]` findings will be addressed via `/start-task` rework, but any `[SUGGESTION]` findings should still be tracked
+- **NEEDS-REWORK:** `[CRITICAL]` and `[WARNING]` findings will be addressed by the auto-dispatched supervisor in Phase 6, but any `[SUGGESTION]` findings should still be tracked
 
 ### Process
 
@@ -126,3 +131,55 @@ After the verdict is resolved (regardless of APPROVE or NEEDS-REWORK), extract a
    ```
    **Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
 5. Inform the user how many finding issues were created and under which epic
+
+---
+
+## Phase 6: Auto-Dispatch Supervisor (NEEDS-REWORK only)
+
+**Skip this phase entirely when verdict is APPROVE.**
+
+When verdict is `NEEDS-REWORK`, re-dispatch the implementation supervisor in the same session instead of asking the user to run `/start-task`. This preserves flow and avoids re-entering the orchestration cycle from scratch.
+
+### 6.1 Resolve Supervisor
+
+1. Read the `assignee` field from the bead JSON (already fetched in Phase 2) — this contains the supervisor name (e.g., `rust-supervisor`).
+2. **If `assignee` is set and non-empty:**
+   - Verify the agent file exists: check for `.claude/agents/{assignee}.md`
+   - If file exists → supervisor resolved, proceed to 6.2
+   - If file NOT found → warn user the specified supervisor does not exist, fall through to manual selection
+3. **If `assignee` is empty or unset, OR the file was missing:**
+   - List available implementation supervisors: find all `*-supervisor.md` files in `.claude/agents/`
+   - Present the list and ask: "Which supervisor should handle this rework? (or type `skip` to stop and run manually)"
+   - If user types `skip` → inform "Run `/start-task {BEAD_ID}` when ready." and stop
+   - Otherwise → supervisor resolved
+
+### 6.2 Confirm Before Dispatch
+
+Present a one-line summary and wait for explicit confirmation:
+
+```
+Ready to dispatch {resolved-supervisor} for rework of {BEAD_ID}: "{bead title}"
+  Branch: {REWORK_BRANCH_INSTRUCTION summary}
+  Findings to address: {N} CRITICAL + {M} WARNING (SUGGESTIONS tracked separately in epic)
+
+Proceed? [y/n]
+```
+
+**If user answers `n` or anything other than `y`/`yes`:** inform "OK, rework paused. Run `/start-task {BEAD_ID}` when ready." and stop. Do NOT dispatch.
+
+**If user confirms:** proceed to 6.3.
+
+### 6.3 Dispatch Supervisor
+
+Dispatch the resolved supervisor using **exactly** these parameters — no more, no less:
+
+```python
+Task(
+    subagent_type="{resolved-supervisor}",
+    prompt="Rework BEAD {BEAD_ID}. {REWORK_BRANCH_INSTRUCTION} Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context. The latest REVIEW comment contains CRITICAL and WARNING findings that MUST be addressed in this cycle — SUGGESTIONS have been tracked as separate finding issues in the parent epic and are out of scope for this rework. After addressing findings, log a COMPLETED comment summarizing what was fixed."
+)
+```
+
+**Do NOT add extra parameters** (e.g., `isolation`, `run_in_background`, etc.) unless the user explicitly requests it.
+
+The `PreToolUse` hook automatically injects the discipline reminder because the agent name ends in `-supervisor`.

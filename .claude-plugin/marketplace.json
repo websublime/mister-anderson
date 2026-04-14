@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Methodical, human-controlled software development with beads task tracking and multi-agent orchestration",
-    "version": "0.2.1"
+    "version": "0.3.0"
   },
   "plugins": [
     {
       "name": "mister-anderson",
       "source": "./",
       "description": "Beads development for humans — a structured, human-controlled development pipeline with task tracking, code review gates, and multi-agent orchestration",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "author": {
         "name": "Miguel Ramos",
         "email": "miguel.ramos@websublime.com"

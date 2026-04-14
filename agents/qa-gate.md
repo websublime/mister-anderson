@@ -173,9 +173,9 @@ When the verdict is FAIL, classify each failure reason:
 | **MINOR** | Can defer — cosmetic gap, extra feature not in spec, lint warnings | Added helper not in spec; non-critical lint warnings |
 
 A **FAIL** verdict requires listing the specific failures with severity. The orchestrator presents these to the user who decides:
-- **BLOCKER found**: Send back to `/start-task` for rework
-- **MAJOR only**: Create a follow-up bead for the gaps, or rework
-- **MINOR only**: Override and merge, or create follow-up bead
+- **BLOCKER found**: rework — orchestrator auto-dispatches the implementation supervisor in the same session (with `y/n` confirmation)
+- **MAJOR only**: create a follow-up bead for the gaps, or rework (same auto-dispatch flow)
+- **MINOR only**: override and merge, or create follow-up bead
 - Always the user's decision
 
 > **Note (for context only — you do NOT create tracking issues):** The orchestrator automatically tracks non-positive findings as beads issues under the same epic the validated task belongs to. If the task has no parent epic, findings fall back to a "Review Findings" epic. The finding type is used as a `finding:{type}` label for filtering. Your job ends at logging the QA comment — the orchestrator handles finding tracking.

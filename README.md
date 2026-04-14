@@ -107,7 +107,7 @@ flowchart TD
         R3["Dispatch Linus\ncode-reviewer"]
         R4{"Verdict?"}
         R_APP["APPROVE\nlabel: approved"]
-        R_REW["NEEDS-REWORK\nlabel: needs-rework\nback to /start-task"]
+        R_REW["NEEDS-REWORK\nlabel: needs-rework\nauto-dispatch supervisor (y/n)"]
         R5["Track review findings\nvia Fernando"]
         R5D{"Finding covered\nby existing task?"}
         R5_LINK["Link to existing task\ncomment + discovered-from dep"]
@@ -131,7 +131,7 @@ flowchart TD
         Q_PASS["PASS\nlabel: qa-passed"]
         Q_FAIL["FAIL"]
         Q_FAIL_Q{"User\ndecision?"}
-        Q_REWORK["Rework\nback to /start-task"]
+        Q_REWORK["Rework\nauto-dispatch supervisor (y/n)"]
         Q_FOLLOWUP["Follow-up bead\nor override"]
         Q5["Track QA findings\nvia Fernando"]
         Q5D{"Finding covered\nby existing task?"}
@@ -151,9 +151,9 @@ flowchart TD
 
     S7 --> R1
     R_APP --> Q1
-    R_REW -.-> S1
+    R_REW -.-> S6
     R_REF_Y -.-> R3
-    Q_REWORK -.-> S1
+    Q_REWORK -.-> S6
     Q_PASS --> MERGE(("User merges\nCreate PR"))
 
     style START fill:#0d1117,stroke:#4caf50,color:#fff
@@ -589,9 +589,9 @@ Shows beads with the `needs-review` label. Pick which one to review.
 
 **NEEDS-REWORK** — Issues found (critical, warnings, or acceptance criteria unmet):
 - Labels updated: `needs-review` removed, `needs-rework` added
-- You're told to use `/start-task bd-xxx` to re-dispatch the original implementation supervisor
-- The existing branch is preserved — `/start-task` will detect it and ask if you want to continue on it
-- The REVIEW comment contains all findings — the supervisor reads it to know exactly what to fix
+- You're asked whether to continue on the existing branch or create a fresh one
+- After `SUGGESTION` findings are tracked as separate beads, the skill auto-dispatches the original implementation supervisor (resolved from the bead's `assignee`) in the same session — asking for explicit `y/n` confirmation first
+- The REVIEW comment contains all findings — the supervisor reads it to know exactly what to fix (CRITICAL + WARNING in-scope, SUGGESTIONS tracked separately)
 
 **After any verdict — Track Review Findings:**
 - All non-`[GOOD]` findings that won't be addressed in the current cycle are extracted from the REVIEW comment
@@ -603,19 +603,18 @@ Shows beads with the `needs-review` label. Pick which one to review.
 
 ### Handling a NEEDS-REWORK Cycle
 
-When a code review returns `NEEDS-REWORK`, the task goes back to the implementation supervisor for substantial changes.
+When a code review returns `NEEDS-REWORK`, `/review-task` itself re-dispatches the implementation supervisor in the same session after `y/n` confirmation — no need to manually invoke `/start-task` again.
 
-```
-/start-task bd-001.2
-```
-
-**What's different from the first run:**
-1. The bead already has an `INVESTIGATION:` comment — Sherlock's research is reused
-2. A branch already exists — you're asked whether to continue on it or start fresh
-3. The bead has a `REVIEW:` comment — the supervisor reads it via Rule 0 to understand what went wrong
+**What the rework dispatch carries over:**
+1. The bead already has an `INVESTIGATION:` comment — Sherlock's research is reused via Rule 0
+2. The existing branch is preserved (or you opt for a fresh one from a chosen base)
+3. The REVIEW comment lists every finding — the supervisor reads it via Rule 0 to know what to fix
 4. The `needs-rework` label tells everyone this is a second pass
+5. SUGGESTION findings are tracked as separate beads in the parent epic, explicitly out-of-scope for the rework dispatch
 
 After the supervisor finishes, the task goes back to `in-review` with `needs-review` label, and you run `/review-task` again.
+
+**Escape hatch:** if you answer `n` to the confirmation (e.g., you want to sleep on it), the labels/status are already set — you can resume later with `/start-task bd-xxx`.
 
 ---
 
@@ -653,7 +652,8 @@ Shows beads with the `approved` label. Pick which one to QA.
 
 **If FAIL:**
 - Failures listed with severity
-- You decide: rework (back to `/start-task`), create follow-up bead, or override and merge anyway
+- You decide: rework (auto-dispatches the supervisor in the same session after `y/n` confirmation — no need to run `/start-task` manually), create follow-up bead, or override and merge anyway
+- On rework, non-scope findings (`[MINOR]`, `[EXTRA]`, `[RISK]`, unlogged deviations) are tracked as separate beads in the parent epic before dispatch
 
 **After any verdict — Track QA Findings:**
 - All non-positive findings (`[EXTRA]`, `[DEVIATES]`, `[RISK]`, `[MINOR]`, unlogged deviations) that won't be addressed in the current cycle are extracted from the QA comment
@@ -804,7 +804,7 @@ REVIEW:        (Linus)       -- Findings with severities and overall verdict
 QA:            (Quinn)       -- Spec conformity, tests, build, lint, final verdict
 ```
 
-This trail survives session restarts and context compaction. When `/start-task` re-dispatches after a NEEDS-REWORK, the supervisor reads all previous comments via Rule 0 and has full history.
+This trail survives session restarts and context compaction. When `/review-task` re-dispatches the supervisor after a NEEDS-REWORK (or when you resume manually with `/start-task`), the supervisor reads all previous comments via Rule 0 and has full history.
 
 **To inspect a bead's trail at any time:**
 ```bash
