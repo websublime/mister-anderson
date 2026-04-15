@@ -99,7 +99,7 @@ Use the template at `${CLAUDE_PLUGIN_ROOT}/skills/setup/templates/AGENTS.md`. Wr
 Ensure `.claude/agents/` exists, then dispatch:
 
 ```python
-Task(
+Agent(
     subagent_type="discovery",
     prompt="Detect tech stack and create supervisors for this project. Write supervisor files to .claude/agents/."
 )
@@ -112,7 +112,7 @@ Task(
 ### Step 5: Write Version File
 
 ```bash
-echo "0.2.1" > ./.claude/.mister-anderson-version
+echo "0.3.0" > ./.claude/.mister-anderson-version
 ```
 
 > When bumping the plugin version, update this step to match `plugin.json`.

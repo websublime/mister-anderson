@@ -2,6 +2,7 @@
 name: code-reviewer
 description: Read-only code review gate. Analyzes implementation branches against bead acceptance criteria, identifies quality issues, security vulnerabilities, and improvement opportunities. Produces structured REVIEW reports as bead comments for the orchestrator to consume.
 model: opus
+effort: high
 tools:
   - Read
   - Glob

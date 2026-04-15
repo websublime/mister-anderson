@@ -2,6 +2,7 @@
 name: investigator
 description: Technical feasibility research and assumption validation. Investigates APIs, libraries, and dependencies BEFORE spec creation. Saves structured research docs that Ada consumes during design.
 model: opus
+effort: high
 tools:
   - Read
   - Glob

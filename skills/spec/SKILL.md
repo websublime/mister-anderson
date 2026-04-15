@@ -51,7 +51,7 @@ No PRD found. Recommend running `/requirements` first.
 3. **Dispatch** using **exactly** these parameters — no more, no less:
 
    ```python
-   Task(
+   Agent(
        subagent_type="architect",
        prompt="Create a detailed TECHNICAL SPEC for the plan at {plan_path}. PRD for context: {prd_path}. Research findings (MUST READ before designing): {research_paths_comma_separated}. The research docs contain validated assumptions — your design MUST align with the confirmed findings and address any contradictions or risks identified. Do NOT re-assume what research already validated or contradicted. If research contradicted a plan assumption, design the spec around the reality documented in the research, not the original plan assumption. Save to {spec_path} with status DRAFT. Iterate with the user until APPROVED."
    )

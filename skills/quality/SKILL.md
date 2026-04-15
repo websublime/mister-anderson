@@ -51,7 +51,7 @@ This task hasn't passed code review yet. Recommend running `/review {BEAD_ID}` f
 Dispatch using **exactly** these parameters — no more, no less:
 
 ```python
-Task(
+Agent(
     subagent_type="qa-gate",
     prompt="QA validate BEAD {BEAD_ID} on branch {branch-name}. Spec: {spec_path}. PRD: {prd_path}. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, COMPLETED, DECISION, DEVIATION, and REVIEW comments. Run tests, build, and lint. Log a structured QA comment to the bead."
 )
@@ -108,7 +108,7 @@ bd show {BEAD_ID} --json | python3 -c "import json,sys; d=json.load(sys.stdin); 
 
 Dispatch **beads-owner** using **exactly** these parameters — no more, no less:
 ```python
-Task(
+Agent(
     subagent_type="beads-owner",
     prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the validated task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{type}' (lowercase) for each. Include relevant context from QA report. Findings:\n\n{FINDINGS_LIST}"
 )
@@ -130,7 +130,7 @@ Task(
    ```
 3. **If confirmed**, dispatch using **exactly** these parameters — no more, no less:
    ```python
-   Task(
+   Agent(
        subagent_type="{resolved-supervisor}",
        prompt="QA rework for BEAD {BEAD_ID}. {REWORK_BRANCH_INSTRUCTION} Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context. The latest QA comment contains BLOCKER and MAJOR failures that MUST be addressed — MINOR, EXTRA, RISK findings have been tracked as separate issues. After addressing failures, log a COMPLETED comment summarizing what was fixed."
    )

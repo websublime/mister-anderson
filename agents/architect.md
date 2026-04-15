@@ -2,6 +2,7 @@
 name: architect
 description: System design and implementation planning
 model: opus
+effort: high
 tools:
   - Read
   - Write

@@ -37,7 +37,7 @@ If a manifesto exists at `docs/MANIFESTO.md`:
 3. **Dispatch** using **exactly** these parameters — no more, no less:
 
    ```python
-   Task(
+   Agent(
        subagent_type="product-manager",
        prompt="Create a PRD for the requested feature/product. Save the PRD to {agreed_path}. Context: {user_idea}. Reference documents: {doc_paths_if_any}"
    )

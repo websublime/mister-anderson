@@ -122,7 +122,7 @@ ls .claude/hooks/ 2>/dev/null && echo "WARNING: Local hooks still exist" || echo
 Offer to refresh dynamic supervisors. If user agrees:
 
 ```python
-Task(
+Agent(
     subagent_type="discovery",
     prompt="Detect tech stack and create/update supervisors for this project. Do NOT delete existing supervisors. Write supervisor files to .claude/agents/."
 )

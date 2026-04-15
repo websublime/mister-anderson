@@ -36,7 +36,7 @@ No PRD found. Recommend running `/requirements` first.
 2. **Dispatch** using **exactly** these parameters — no more, no less:
 
    ```python
-   Task(
+   Agent(
        subagent_type="architect",
        prompt="Create high-level product architecture for the requested solution. Read the PRD at {prd_path} as your input requirements. This is a Stage 1 architecture document — focus on system design, tech stack, crate/package structure, and key design decisions. Do NOT write phase-level implementation specs (that's /spec). Save the architecture document to {arch_path} with status DRAFT. Iterate with the user until APPROVED."
    )

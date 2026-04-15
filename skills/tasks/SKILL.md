@@ -47,7 +47,7 @@ No PRD found. Recommend running `/requirements` first.
 Dispatch using **exactly** these parameters — no more, no less:
 
 ```python
-Task(
+Agent(
     subagent_type="beads-owner",
     prompt="Create epics and issues for the requested solution. Product requirements: {prd_path}. Spec: {spec_path}. Read both documents for full context before creating issues. CRITICAL — Reference-only beads: set --spec-id to the PRD document reference. Set --external-ref to the spec path with section references. Set --design to a one-line pointer (e.g., 'See {spec_path} § {section}'). Acceptance criteria must be verifiable pass/fail conditions only — no implementation details. NEVER copy spec content into description or design fields. Beads track work; specs define work."
 )
@@ -65,7 +65,7 @@ Gather context:
 Dispatch using **exactly** these parameters — no more, no less:
 
 ```python
-Task(
+Agent(
     subagent_type="beads-owner",
     prompt="Create issues based on the following context. Issue description: {user_input_or_summary}. Reference documents: {doc_paths_if_any}. Parent epic: {epic_id_or_none}. Project type: {monorepo with package X | single-repo}."
 )

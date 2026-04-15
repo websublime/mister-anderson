@@ -87,7 +87,7 @@ git branch -a | grep {BEAD_ID}
 
 2. Dispatch using **exactly** these parameters — no more, no less:
    ```python
-   Task(
+   Agent(
        subagent_type="{resolved-supervisor}",
        prompt="Implement BEAD {BEAD_ID}. [Include EPIC_ID if epic child]. Base branch: {BASE_BRANCH} — run `git checkout {BASE_BRANCH}` before creating your feature branch. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, and investigation findings."
    )

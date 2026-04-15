@@ -11,7 +11,7 @@ description: Core engineering principles for implementation tasks
 
 You MUST execute skill instructions exactly as written. You are NOT allowed to:
 
-- **Add parameters, flags, or options** not specified in the instructions (e.g., adding `isolation: "worktree"` to a Task() call when the skill doesn't mention it)
+- **Add parameters, flags, or options** not specified in the instructions (e.g., adding `isolation: "worktree"` to an Agent() call when the skill doesn't mention it)
 - **Remove or modify parameters** that are explicitly specified
 - **Change the execution strategy** (e.g., switching from sequential to parallel, or vice-versa)
 - **Add "safety" measures** the instructions didn't ask for
@@ -20,7 +20,7 @@ You MUST execute skill instructions exactly as written. You are NOT allowed to:
 **If you believe the instructions are wrong, incomplete, or could be improved — ASK THE USER FIRST.** Do not act on your own judgement. The cost of asking is near zero. The cost of a unilateral decision can break the entire workflow.
 
 This applies to:
-- Tool calls (Task, Agent, Bash, etc.)
+- Tool calls (Agent, Bash, etc.)
 - Git operations (branch naming, commit strategy)
 - File operations (paths, naming conventions)
 - Any deviation from what the skill/spec/design doc defines

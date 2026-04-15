@@ -2,15 +2,15 @@
 #
 # PreToolUse: Inject discipline skill reminder for supervisor dispatches
 #
-# When orchestrator dispatches a supervisor via Task(), remind them to
+# When orchestrator dispatches a supervisor via Agent(), remind them to
 # invoke the subagents-discipline skill at the start of implementation.
 #
 
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
 
-# Only check Task tool
-[[ "$TOOL_NAME" != "Task" ]] && exit 0
+# Only check Agent tool (dispatches subagents)
+[[ "$TOOL_NAME" != "Agent" ]] && exit 0
 
 # Check if dispatching a supervisor
 SUBAGENT_TYPE=$(echo "$INPUT" | jq -r '.tool_input.subagent_type // empty')

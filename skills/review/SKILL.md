@@ -49,7 +49,7 @@ Warn: "The implementation supervisor did not leave a COMPLETED comment. The revi
 Dispatch using **exactly** these parameters — no more, no less:
 
 ```python
-Task(
+Agent(
     subagent_type="code-reviewer",
     prompt="Review BEAD {BEAD_ID} on branch {branch-name}. Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context — description, acceptance criteria, design notes, and the COMPLETED comment from the supervisor. Analyze the branch diff against acceptance criteria and log a structured REVIEW comment to the bead."
 )
@@ -100,7 +100,7 @@ bd show {BEAD_ID} --json | python3 -c "import json,sys; d=json.load(sys.stdin); 
 
 Dispatch **beads-owner** using **exactly** these parameters — no more, no less:
 ```python
-Task(
+Agent(
     subagent_type="beads-owner",
     prompt="Create beads issues for the following review findings from BEAD {BEAD_ID} review. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the reviewed task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{severity}' (lowercase) for each. Include file path and line number. Findings:\n\n{FINDINGS_LIST}"
 )
@@ -122,7 +122,7 @@ Task(
    ```
 3. **If confirmed**, dispatch using **exactly** these parameters — no more, no less:
    ```python
-   Task(
+   Agent(
        subagent_type="{resolved-supervisor}",
        prompt="Rework BEAD {BEAD_ID}. {REWORK_BRANCH_INSTRUCTION} Read the bead (bd show {BEAD_ID}) and comments (bd comments {BEAD_ID}) for full context. The latest REVIEW comment contains CRITICAL and WARNING findings that MUST be addressed — SUGGESTIONS have been tracked as separate issues. After addressing findings, log a COMPLETED comment summarizing what was fixed."
    )

@@ -179,6 +179,7 @@ This grants supervisors access to ALL available tools including MCP tools and Sk
 name: [agent-name]
 description: [brief - one line]
 model: opus
+effort: high
 tools: *
 ---
 

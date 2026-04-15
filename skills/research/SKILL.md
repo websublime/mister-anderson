@@ -43,7 +43,7 @@ No PRD found. Recommend running `/requirements` first.
 3. **Dispatch** using **exactly** these parameters — no more, no less:
 
    ```python
-   Task(
+   Agent(
        subagent_type="investigator",
        prompt="Research technical feasibility for the plan at {plan_path}. PRD for context: {prd_path}. Save the research document to {research_path}. {focus_areas_or_empty}Read the plan to extract all technical assumptions and external dependencies, then validate each one against real documentation and the existing codebase."
    )

@@ -2,6 +2,7 @@
 name: qa-gate
 description: Quality assurance finalization gate. Validates spec conformity, user stories, runs tests/build/lint, and produces structured QA reports. Last gate before human merge.
 model: opus
+effort: high
 tools:
   - Read
   - Glob

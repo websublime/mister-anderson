@@ -52,7 +52,7 @@ An investigation already exists for this bead. Show the existing findings and as
 Dispatch using **exactly** these parameters — no more, no less:
 
 ```python
-Task(
+Agent(
     subagent_type="research",
     prompt="Investigate BEAD {BEAD_ID}. [Include EPIC_ID if epic child]. Read the bead (bd show {BEAD_ID}) for full context — description, acceptance criteria, and design notes. Read the spec and plan referenced in the bead's external-ref or spec-id fields. If the spec has a Research Findings section, spot-check 2-3 assumptions against the current codebase. Flag any SPEC_DRIFT in your investigation comment. Log your structured findings as a bead comment using bd comments add."
 )

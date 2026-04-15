@@ -797,7 +797,7 @@ This plugin is tested with **beads >= 0.60** (Dolt backend).
 | Add comment | `bd comments add {ID} "text"` |
 | Add label | `bd label add {ID} {label}` |
 | Remove label | `bd label remove {ID} {label}` |
-| Sync | `bd dolt push` / `bd dolt pull` |
+| Sync | `bd dolt push` / `bd dolt pull` (remote only — skip for localhost) |
 | Storage | Dolt (MySQL protocol) |
 
 ---

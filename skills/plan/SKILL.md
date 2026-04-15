@@ -41,7 +41,7 @@ No architecture doc found. Warn that planning without architecture may lead to s
 3. **Dispatch** using **exactly** these parameters — no more, no less:
 
    ```python
-   Task(
+   Agent(
        subagent_type="architect",
        prompt="Create a PHASE PLAN (not a spec) for: {phase_description}. Read the PRD at {prd_path} and architecture at {arch_path} for context. This is a planning document that defines: scope (what's in/out for this phase), high-level task breakdown, dependencies between tasks, external dependencies and APIs that will need research, and acceptance criteria for the phase. Save to {plan_path} with status DRAFT. Do NOT write implementation specs — that comes after research validates the plan's assumptions. Iterate with the user until APPROVED."
    )
