@@ -171,15 +171,15 @@ flowchart TD
     RE -- no --> RES --> RD --> CO
     RE -- yes --> SP
     CO -- yes --> FX
-    FX -- "adjust plan" -.-> PL
-    FX -- "proceed" --> SP
+    FX -.->|adjust plan| PL
+    FX -->|proceed| SP
     CO -- no --> SP
     SP -- no --> SPS --> SP
     SP -- yes --> CH
     CH -- no --> CHS
-    CHS -- "fix spec" -.-> SP
-    CHS -- "fix plan" -.-> PL
-    CHS -- "clean" --> CH
+    CHS -.->|fix spec| SP
+    CHS -.->|fix plan| PL
+    CHS -->|clean| CH
     CH -- yes --> BD
     BD -- no --> TKS --> BDS --> BD
     BD -- yes --> OK
