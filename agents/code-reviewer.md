@@ -140,7 +140,7 @@ Verdict: [APPROVE / NEEDS-REWORK]"
 | Verdict | Meaning |
 |---------|---------|
 | **APPROVE** | No critical or warning findings. Ready for merge. |
-| **NEEDS-REWORK** | Has critical or warning findings, or acceptance criteria unmet. Goes back to the implementation supervisor via `/start-task`. |
+| **NEEDS-REWORK** | Has critical or warning findings, or acceptance criteria unmet. Goes back to the implementation supervisor via `/do`. |
 
 ---
 

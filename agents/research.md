@@ -53,6 +53,11 @@ You DO NOT write code — you provide the map so supervisors can execute with co
    - Extract EPIC_ID (part before dot, e.g., bd-001)
    - Read design doc: bd show {EPIC_ID} --json | jq -r '.[0].design'
    - This design doc is the contract — note field names, types, shapes
+   - Read spec and plan referenced in the bead's external-ref or spec-id fields
+2.5. If spec/design doc has a "Research Findings" section:
+   - Spot-check 2-3 validated assumptions against current codebase state
+   - If any assumption no longer holds (code changed since spec was written), flag as SPEC_DRIFT
+   - SPEC_DRIFT means the spec's foundation may be outdated — the orchestrator needs to decide before implementation proceeds
 3. Parse description and design notes for file references, module names, error messages
 4. Search codebase: Glob for file patterns, Grep for symbols/functions/error strings
 5. Read identified files — trace the execution path from entry point to affected area
@@ -74,6 +79,7 @@ bd comments add {BEAD_ID} "INVESTIGATION:
 Root cause: [exact description of the problem or feature entry point]
 Files: [file1.ts:42, file2.ts:108 — with line numbers and brief reason each file matters]
 Approach: [recommended implementation strategy — step by step]
+Spec drift: [NONE | list of discrepancies between spec assumptions and current codebase state]
 Risks: [gotchas, edge cases, things that could break]
 Related tests: [test files that cover this area and may need updates]"
 ```
@@ -127,6 +133,9 @@ COMMENTS_LOGGED: Yes — supervisor can read via bd comments {BEAD_ID}
 Before reporting:
 - [ ] Bead fully read and understood (description, acceptance, design, existing comments)
 - [ ] Epic design doc consulted if this is an epic child
+- [ ] Spec and plan from external-ref/spec-id fields read
+- [ ] Research Findings spot-checked against current codebase (if section exists)
+- [ ] Spec drift flagged if assumptions no longer hold
 - [ ] Code paths traced to root cause or implementation entry point
 - [ ] Structured findings logged to bead comments via `bd comments add`
 - [ ] Approach is actionable — supervisor can execute without re-investigating

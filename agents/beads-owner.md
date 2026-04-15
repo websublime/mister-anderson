@@ -24,11 +24,12 @@ When creating a task, you never create a vague task, title only. Task as to have
     - If no parameters are present, ask the user where you can find the docs about the project.
     - Task fields: description, label, priority, acceptance, design and type are mandatory
     - If task depends on another task, add the dependency with the correct type (e.g., discovered-from, blocks, deps)
-    - External reference should point to documents that you read and that are relevant for the task (e.g., spec, product requirement, plan)
-    - Acceptance criteria should be clear and detailed, so the implementation supervisor can follow it and know when the task is done and also pointing to read the relevant documents.
-    - Specification about the task should be added to design notes.
+    - External reference MUST point to the source spec and PRD documents with section references. Format: pipe-separated (e.g., `"SPEC §7.4 | PLAN task 06.03"`). This is how downstream agents find the authoritative source of truth.
+    - Acceptance criteria MUST be verifiable pass/fail conditions only — NOT implementation details. Example: "API returns paginated results with cursor-based navigation" not "Use Prisma's cursor-based pagination with take/skip parameters." The supervisor reads the spec for implementation details.
+    - Design notes MUST contain ONLY a reference pointer to the spec section, NOT a copy of spec content. Format: "See {spec-file} § {section-name} for implementation details." NEVER paste spec content into this field — lossy copies cause task drift.
+    - NEVER copy specification text, API contracts, parameter lists, return types, or implementation details into bead fields. Beads are tracking artifacts that POINT TO specs — they are not specs themselves. Use `--external-ref` and `--spec-id` for document references. Use `--design` for a one-line pointer only.
     - The `--spec-id` flag MUST point to the main PRD document (e.g., `PRD 9.14`). If additional reference documents exist (architecture specs, plans, etc.), combine them in `--external-ref` pipe-separated (e.g., `"ARCH 6 | PLAN 3"`).
-    - The `--assignee` flag MUST be set to the implementation supervisor name. This field is consumed by the `/start-task` skill to automatically dispatch the correct implementation supervisor.
+    - The `--assignee` flag MUST be set to the implementation supervisor name. This field is consumed by the `/do` skill to automatically dispatch the correct implementation supervisor.
       - Format: `{name}-supervisor` (lowercase, exact agent filename without .md)
       - To find available supervisors: check the `.claude/agents/` directory for files matching `*-supervisor.md`
       - NEVER assume or guess supervisor names — always verify they exist in the agents directory before writing the field
@@ -44,7 +45,7 @@ When creating a task, you never create a vague task, title only. Task as to have
 
 ## Creating finding issues (review & QA)
 
-When dispatched by `/review-task` or `/qa-task` to track findings, follow this streamlined process:
+When dispatched by `/review` or `/quality` to track findings, follow this streamlined process:
 
 <on-review-findings>
 1. **You will receive:** a list of findings (type/severity, file:line or context, description) from a code review or QA validation, plus the source `{BEAD_ID}` and the `{FINDINGS_EPIC_ID}`.
