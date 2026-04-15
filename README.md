@@ -69,7 +69,7 @@ flowchart LR
 | Stage | Orchestrator | Atoms | Gate |
 |-------|-------------|-------|------|
 | **1 — Product Discovery** | `/product` | `/manifesto` → `/requirements` → `/architecture` | PRD APPROVED + Architecture APPROVED |
-| **2 — Specification** | `/specification` | `/plan` → `/research` → `/spec` → `/tasks` | Spec APPROVED + beads created |
+| **2 — Specification** | `/specification` | `/plan` → `/research` → `/spec` → coherence review → `/tasks` | Spec APPROVED + 3 clean coherence rounds + beads created |
 | **3 — Implementation** | `/implementation` | `/investigate` → `/do` → `/review` → `/quality` | QA PASS → merge |
 
 **Meta-orchestrator:** `/workflow` shows project state across all stages, suggests the next step, and routes to the correct stage orchestrator.
@@ -146,7 +146,7 @@ Create high-level product architecture — system design, tech stack, structural
 
 ![Stage 2 — Specification](docs/diagrams/mister-anderson-specification.png)
 
-Repeatable per phase/feature. Plan the phase, validate assumptions with research, write the spec, create tasks.
+Repeatable per phase/feature. Plan the phase, validate assumptions with research, write the spec, verify coherence, create tasks.
 
 ```mermaid
 flowchart TD
@@ -154,12 +154,14 @@ flowchart TD
     RE{{"Research\nexists?"}}
     CO{{"Contradictions?"}}
     SP{{"Spec\nAPPROVED?"}}
+    CH{{"Coherence\n3 clean rounds?"}}
     BD{{"Beads\nexist?"}}
     PLS["/plan → Ada"]
     RES["/research → Smith"]
     RD["research doc:\nCONFIRMED | CONTRADICTED"]
-    FX["resolve plan or\nproceed with risks?"]
+    FX["adjust plan?\nproceed? cancel?"]
     SPS["/spec → Ada + research"]
+    CHS["Ada reviews\nplan ↔ research ↔ spec"]
     TKS["/tasks → Fernando"]
     BDS["reference-only beads:\nbeads track, specs define"]
     OK["Stage 2 COMPLETE"]
@@ -168,10 +170,17 @@ flowchart TD
     PL -- yes --> RE
     RE -- no --> RES --> RD --> CO
     RE -- yes --> SP
-    CO -- yes --> FX -.-> PL
+    CO -- yes --> FX
+    FX -- "adjust plan" -.-> PL
+    FX -- "proceed" --> SP
     CO -- no --> SP
     SP -- no --> SPS --> SP
-    SP -- yes --> BD
+    SP -- yes --> CH
+    CH -- no --> CHS
+    CHS -- "fix spec" -.-> SP
+    CHS -- "fix plan" -.-> PL
+    CHS -- "clean" --> CH
+    CH -- yes --> BD
     BD -- no --> TKS --> BDS --> BD
     BD -- yes --> OK
 
@@ -179,8 +188,10 @@ flowchart TD
     style RE fill:#fff9db,stroke:#fab005,color:#1e1e1e
     style CO fill:#fff9db,stroke:#fab005,color:#1e1e1e
     style SP fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style CH fill:#dbe4ff,stroke:#4263eb,color:#1e1e1e
     style BD fill:#fff9db,stroke:#fab005,color:#1e1e1e
     style FX fill:#fff5f5,stroke:#fa5252,color:#1e1e1e
+    style CHS fill:#dbe4ff,stroke:#4263eb,color:#1e1e1e
     style OK fill:#ebfbee,stroke:#40c057,color:#1e1e1e
 ```
 
@@ -205,9 +216,11 @@ Validate technical assumptions from the plan against real APIs, libraries, and c
   2. Investigates each using official docs (context7), GitHub examples, WebFetch, and codebase analysis
   3. Classifies each assumption: **CONFIRMED**, **CONTRADICTED**, or **PARTIALLY CONFIRMED** with evidence
   4. Documents contradictions with plan-vs-reality comparison and recommendations
-  5. If contradictions found, you decide: adjust the plan first or proceed with known risks
+  5. If contradictions found, you decide: **adjust the plan** (recommended — loops back to `/plan`, then re-research until coherent) or proceed with known risks
 
 **Why this step exists:** Without research, specs are based on assumptions. When supervisors hit reality during implementation, they discover mismatches and create new tasks — this is the root cause of task drift.
+
+**Plan↔Research loop:** When you choose "adjust the plan", the `/specification` orchestrator routes back to `/plan` for Ada to correct, then re-runs `/research` to validate corrections. This loop repeats until zero contradictions or you explicitly accept the risks.
 
 ### /spec
 
@@ -218,12 +231,30 @@ Create a detailed technical specification grounded in validated research.
 - **Output:** `docs/specs/NN-spec-{feature}.md` with status DRAFT → APPROVED
 - **Key:** Ada reads the research docs first and designs around verified facts, not assumptions. If research contradicted a plan assumption, the spec follows reality, not the plan.
 
+### Coherence Review
+
+Cross-document validation gate before task creation. Ensures plan, research, and spec are fully aligned.
+
+- **Agent:** Ada (architect) — read-only review mode
+- **Requires:** Spec APPROVED
+- **Minimum:** 3 clean review rounds before proceeding to `/tasks`
+- **What happens:**
+  1. Ada reads plan + research + spec together and cross-checks for discrepancies
+  2. Each round focuses on a different aspect:
+     - **Round 1:** Structural coherence — scope coverage, missing requirements
+     - **Round 2:** Technical coherence — API contracts, data models, dependency assumptions
+     - **Round 3:** Acceptance coherence — criteria traceability from PRD → plan → spec
+  3. If discrepancies found: fix in spec (route to `/spec`) or fix in plan (route back to plan↔research loop), then reset round counter
+  4. If clean: increment counter. After 3 clean rounds → proceed to `/tasks`
+
+**Why this gate exists:** A spec can be individually "correct" but drift from the plan or ignore research findings. Three rounds of cross-document review catch subtle misalignments before they become task drift during implementation.
+
 ### /tasks
 
 Decompose a spec into trackable epics and issues.
 
 - **Agent:** Fernando (beads-owner)
-- **Requires:** Spec APPROVED + PRD
+- **Requires:** Spec APPROVED + Coherence review passed (3 clean rounds) + PRD
 - **Output:** Beads (epics + issues) in the beads database
 - **Two modes:**
   - **Full decomposition** — from a spec: creates epics and issues with reference-only fields
@@ -242,7 +273,7 @@ Beads are tracking artifacts that **point to** specs — they are not specs them
 
 **Why:** Each summarization step loses nuance. When supervisors treat the bead as source of truth instead of reading the actual spec, implementation gaps emerge — the root cause of task drift.
 
-**Gate:** Stage 2 is complete when the spec is APPROVED and beads are created. Proceed to Stage 3.
+**Gate:** Stage 2 is complete when the spec is APPROVED, coherence review passes (3 clean rounds), and beads are created. Proceed to Stage 3.
 
 ---
 
