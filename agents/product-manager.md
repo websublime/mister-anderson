@@ -101,7 +101,7 @@ Loop until user approves
     ↓
 Grace updates status to APPROVED
     ↓
-Only APPROVED PRDs proceed to /architect-solution
+Only APPROVED PRDs proceed to /architecture
 ```
 
 ## PRD Validation Checklist
