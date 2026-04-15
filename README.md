@@ -6,15 +6,17 @@ A Claude Code plugin for methodical, human-controlled software development with 
 
 ## What This Plugin Does
 
-mister-anderson turns Claude Code into a structured development pipeline where **you stay in control**. Every task gets its own branch, every implementation is investigated before coding starts, every change gets reviewed, and nothing merges without your approval.
+mister-anderson turns Claude Code into a **3-stage development pipeline** where you stay in control at every gate. Ideas go through product discovery, get validated by research before specs are written, and every implementation is investigated, reviewed, and QA-validated before merge.
 
 This is not multi-agent vibe coding. This is:
 
-- **Task-by-task** execution with full traceability
-- **Branch-per-task** isolation keeping main clean
-- **Investigation before implementation** so the AI understands before it codes
-- **Code review as a gate** you trigger when ready
-- **Comment trails** on every bead so context is never lost
+- **3-stage pipeline** — Product Discovery → Specification → Implementation
+- **Research before spec** — technical assumptions are validated against real APIs and code before the spec is written
+- **Reference-only beads** — tasks point to specs, they don't summarize them (no lossy compression)
+- **Investigation before implementation** — Sherlock analyzes the codebase before the supervisor codes
+- **Two quality gates** — code review (Linus) then QA (Quinn), with auto-rework loops
+- **Full traceability** — structured comment trails on every bead, decisions and deviations logged
+- **You merge** — nothing ships without your explicit approval
 
 ## Requirements
 
@@ -22,291 +24,595 @@ This is not multi-agent vibe coding. This is:
 - [beads CLI](https://github.com/steveyegge/beads) >= 0.60 (`bd` command)
 - [Dolt](https://github.com/dolthub/dolt) sql-server running (port 3307 or 3306) — required by beads
 
-> **Compatibility note:** This version of mister-anderson targets **beads >= 0.60** which uses Dolt (MySQL protocol) as its database backend. If you are running an older version of beads, please update: `curl -fsSL https://raw.githubusercontent.com/steveyegge/beads/main/scripts/install.sh | bash`
-
 ## Installation
 
-**Step 1 — Add the marketplace:**
-
 ```bash
+# 1. Add the marketplace
 /plugin marketplace add websublime/mister-anderson
-```
 
-**Step 2 — Install the plugin:**
-
-```bash
+# 2. Install the plugin
 /plugin install mister-anderson@websublime-mister-anderson
-```
 
-**Step 3 — Bootstrap your project:**
-
+# 3. Bootstrap your project
+/setup
 ```
-/setup-project
-```
-
-This will:
-1. Initialize beads task tracking
-2. Detect your tech stack and create specialized supervisors
-3. Copy agents, skills, and templates to your project
-4. Configure hooks for workflow discipline
 
 ---
 
 ## The Pipeline
 
+![Workflow Overview](docs/diagrams/mister-anderson-workflow.png)
+
+The pipeline has 3 stages, each with an orchestrator skill that sequences the atomic skills:
+
 ```mermaid
 flowchart LR
-    PRD["/product-requirements"]
-    ARCH["/architect-solution"]
-    TASKS["/beads-product-owner\n/create-bead-issues"]
-    START["/start-task"]
-    REVIEW["/review-task"]
-    QA["/qa-task"]
-    PR["Create PR"]
-    MERGE(("User\nmerges"))
+    S1["/product\nStage 1"]
+    S2["/specification\nStage 2"]
+    S3["/implementation\nStage 3"]
+    WF(("/workflow\nmeta-orchestrator"))
 
-    PRD --> ARCH --> TASKS --> START --> REVIEW --> QA --> PR --> MERGE
+    WF --> S1
+    WF --> S2
+    WF --> S3
+    S1 -- "PRD + Arch\nAPPROVED" --> S2
+    S2 -- "Spec APPROVED\n+ beads" --> S3
+    S3 -- "QA PASS" --> MERGE(("User\nmerges"))
 
-    style PRD fill:#2d4a7a,stroke:#5b9bd5,color:#fff
-    style ARCH fill:#2d4a7a,stroke:#5b9bd5,color:#fff
-    style TASKS fill:#2d4a7a,stroke:#5b9bd5,color:#fff
-    style START fill:#1a6b3c,stroke:#4caf50,color:#fff
-    style REVIEW fill:#7a4a2d,stroke:#e67e22,color:#fff
-    style QA fill:#7a4a2d,stroke:#e67e22,color:#fff
-    style PR fill:#4a4a4a,stroke:#888,color:#fff
-    style MERGE fill:#1a6b3c,stroke:#4caf50,color:#fff
+    style WF fill:#dbe4ff,stroke:#4263eb,color:#1e1e1e
+    style S1 fill:#f3f0ff,stroke:#7950f2,color:#1e1e1e
+    style S2 fill:#f3f0ff,stroke:#7950f2,color:#1e1e1e
+    style S3 fill:#f3f0ff,stroke:#7950f2,color:#1e1e1e
+    style MERGE fill:#ebfbee,stroke:#40c057,color:#1e1e1e
 ```
 
-### Detailed Flow
+| Stage | Orchestrator | Atoms | Gate |
+|-------|-------------|-------|------|
+| **1 — Product Discovery** | `/product` | `/manifesto` → `/requirements` → `/architecture` | PRD APPROVED + Architecture APPROVED |
+| **2 — Specification** | `/specification` | `/plan` → `/research` → `/spec` → `/tasks` | Spec APPROVED + beads created |
+| **3 — Implementation** | `/implementation` | `/investigate` → `/do` → `/review` → `/quality` | QA PASS → merge |
 
-```mermaid
-flowchart TD
-    subgraph START ["/start-task"]
-        S1["Resolve bead ID\nor show ready tasks"]
-        S2["Read full context\ndescription, acceptance, design, epic docs"]
-        S3["Resolve supervisor\nfrom assignee field"]
-        S4{"Investigation\nexists?"}
-        S4Y["Use existing investigation"]
-        S4N["Dispatch Sherlock\nlogs INVESTIGATION: comment"]
-        S5{"Branch\nexists?"}
-        S5Q["Ask: continue or fresh?"]
-        S6["Dispatch implementation supervisor\ncreate branch, implement, test"]
-        S7["Logs COMPLETED: comment\nadds needs-review label\nstatus → in-review"]
-
-        S1 --> S2 --> S3 --> S4
-        S4 -- Yes --> S4Y --> S5
-        S4 -- No --> S4N --> S5
-        S5 -- Yes --> S5Q --> S6
-        S5 -- No --> S6
-        S6 --> S7
-    end
-
-    subgraph REVIEW ["/review-task"]
-        R1["List beads with\nneeds-review label"]
-        R2["Read bead context\n+ COMPLETED comment"]
-        R3["Dispatch Linus\ncode-reviewer"]
-        R4{"Verdict?"}
-        R_APP["APPROVE\nlabel: approved"]
-        R_REW["NEEDS-REWORK\nlabel: needs-rework\nauto-dispatch supervisor (y/n)"]
-        R5["Track review findings\nvia Fernando"]
-        R5D{"Finding covered\nby existing task?"}
-        R5_LINK["Link to existing task\ncomment + discovered-from dep"]
-        R5_NEW["Create issue under\nparent epic (or Review Findings fallback)\nlabel: finding:severity"]
-
-        R1 --> R2 --> R3 --> R4
-        R4 -- APPROVE --> R_APP
-        R4 -- NEEDS-REWORK --> R_REW
-        R_APP --> R5
-        R_REW --> R5
-        R5 --> R5D
-        R5D -- Yes --> R5_LINK
-        R5D -- No --> R5_NEW
-    end
-
-    subgraph QA ["/qa-task"]
-        Q1["List beads with\napproved label"]
-        Q2["Read bead context\n+ spec/PRD"]
-        Q3["Dispatch Quinn\nconformity, tests, build, lint"]
-        Q4{"Verdict?"}
-        Q_PASS["PASS\nlabel: qa-passed"]
-        Q_FAIL["FAIL"]
-        Q_FAIL_Q{"User\ndecision?"}
-        Q_REWORK["Rework\nauto-dispatch supervisor (y/n)"]
-        Q_FOLLOWUP["Follow-up bead\nor override"]
-        Q5["Track QA findings\nvia Fernando"]
-        Q5D{"Finding covered\nby existing task?"}
-        Q5_LINK["Link to existing task\ncomment + discovered-from dep"]
-        Q5_NEW["Create issue under\nparent epic (or Review Findings fallback)\nlabel: finding:type"]
-
-        Q1 --> Q2 --> Q3 --> Q4
-        Q4 -- PASS --> Q_PASS --> Q5
-        Q4 -- FAIL --> Q_FAIL --> Q_FAIL_Q
-        Q_FAIL_Q -- Rework --> Q_REWORK
-        Q_FAIL_Q -- "Follow-up / Override" --> Q_FOLLOWUP --> Q5
-        Q_REWORK --> Q5
-        Q5 --> Q5D
-        Q5D -- Yes --> Q5_LINK
-        Q5D -- No --> Q5_NEW
-    end
-
-    S7 --> R1
-    R_APP --> Q1
-    R_REW -.-> S6
-    R_REF_Y -.-> R3
-    Q_REWORK -.-> S6
-    Q_PASS --> MERGE(("User merges\nCreate PR"))
-
-    style START fill:#0d1117,stroke:#4caf50,color:#fff
-    style REVIEW fill:#0d1117,stroke:#e67e22,color:#fff
-    style QA fill:#0d1117,stroke:#e67e22,color:#fff
-    style MERGE fill:#1a6b3c,stroke:#4caf50,color:#fff
-```
+**Meta-orchestrator:** `/workflow` shows project state across all stages, suggests the next step, and routes to the correct stage orchestrator.
 
 ---
 
-## Skills
+## Stage 1 — Product Discovery
 
-User-invocable commands that orchestrate the workflow.
+![Stage 1 — Product Discovery](docs/diagrams/mister-anderson-product.png)
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
-| **setup-project** | `/setup-project` | One-time bootstrap: init beads, detect stack, create supervisors |
-| **product-requirements** | `/product-requirements` | Elicit and structure a PRD from a raw idea |
-| **architect-solution** | `/architect-solution` | Dispatch architect for design docs and specs from PRD |
-| **beads-product-owner** | `/beads-product-owner` | Create epics and issues from product requirements |
-| **create-bead-issues** | `/create-bead-issues` | Create individual well-defined issues |
-| **start-task** | `/start-task [bead-id]` | Full implementation cycle: investigate, resolve supervisor, dispatch |
-| **review-task** | `/review-task [bead-id]` | Code review gate with optional refactoring dispatch |
-| **qa-task** | `/qa-task [bead-id]` | QA finalization: spec conformity, tests, build, lint |
-| **add-supervisor** | `/add-supervisor [tech]` | Create a new supervisor for a specific technology |
-| **migrate-beads** | `/migrate-beads` | Migrate existing beads to updated field conventions (e.g., supervisor→assignee) |
-| **update-plugin** | `/update-plugin` | Update core agents, skills, and hooks to the latest plugin version |
+One-shot per project. Define what to build and how to build it at a high level.
 
-### Internal Skills
+```mermaid
+flowchart TD
+    M{{"manifesto\nexists?"}}
+    R{{"PRD\nAPPROVED?"}}
+    A{{"Architecture\nAPPROVED?"}}
+    MS["/manifesto\nmanual or guided"]
+    RS["/requirements → Grace"]
+    AS["/architecture → Ada"]
+    RD["DRAFT → iterate → APPROVED"]
+    AD["DRAFT → iterate → APPROVED"]
+    OK["Stage 1 COMPLETE"]
 
-| Skill | Purpose |
-|-------|---------|
-| **subagents-discipline** | Engineering principles auto-injected into implementation supervisors (Rules 0-5) |
+    M -- no --> MS --> M
+    M -- yes --> R
+    R -- no --> RS --> RD --> R
+    R -- yes --> A
+    A -- no --> AS --> AD --> A
+    A -- yes --> OK
+
+    style M fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style R fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style A fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style OK fill:#ebfbee,stroke:#40c057,color:#1e1e1e
+```
+
+### /manifesto
+
+Create the product vision, principles, and governing laws. This is typically a manual step — you write it directly or use guided prompts.
+
+- **Output:** `docs/MANIFESTO.md`
+- **Status:** Optional but recommended — downstream documents align with manifesto principles
+
+### /requirements
+
+Transform a raw idea into a structured Product Requirements Document (PRD).
+
+- **Agent:** Grace (product-manager)
+- **Output:** `docs/prd/PRD-{name}.md` with status DRAFT → APPROVED
+- **What happens:**
+  1. Grace conducts a discovery interview — structured questions to extract requirements
+  2. Applies product frameworks (JTBD, RICE/Kano) to structure the PRD
+  3. Writes to file with status DRAFT
+  4. You review and iterate until satisfied → status becomes APPROVED
+
+### /architecture
+
+Create high-level product architecture — system design, tech stack, structural decisions.
+
+- **Agent:** Ada (architect)
+- **Requires:** PRD APPROVED
+- **Output:** `docs/ARCHITECTURE.md` with status DRAFT → APPROVED
+- **What happens:**
+  1. Ada reads the PRD, analyzes the codebase, researches patterns and dependencies
+  2. Produces architecture with design decisions, data models, API contracts
+  3. You iterate until APPROVED
+
+**Gate:** Stage 1 is complete when both PRD and Architecture are APPROVED. Proceed to Stage 2.
+
+---
+
+## Stage 2 — Specification
+
+![Stage 2 — Specification](docs/diagrams/mister-anderson-specification.png)
+
+Repeatable per phase/feature. Plan the phase, validate assumptions with research, write the spec, create tasks.
+
+```mermaid
+flowchart TD
+    PL{{"Plan\nAPPROVED?"}}
+    RE{{"Research\nexists?"}}
+    CO{{"Contradictions?"}}
+    SP{{"Spec\nAPPROVED?"}}
+    BD{{"Beads\nexist?"}}
+    PLS["/plan → Ada"]
+    RES["/research → Smith"]
+    RD["research doc:\nCONFIRMED | CONTRADICTED"]
+    FX["resolve plan or\nproceed with risks?"]
+    SPS["/spec → Ada + research"]
+    TKS["/tasks → Fernando"]
+    BDS["reference-only beads:\nbeads track, specs define"]
+    OK["Stage 2 COMPLETE"]
+
+    PL -- no --> PLS --> PL
+    PL -- yes --> RE
+    RE -- no --> RES --> RD --> CO
+    RE -- yes --> SP
+    CO -- yes --> FX -.-> PL
+    CO -- no --> SP
+    SP -- no --> SPS --> SP
+    SP -- yes --> BD
+    BD -- no --> TKS --> BDS --> BD
+    BD -- yes --> OK
+
+    style PL fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style RE fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style CO fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style SP fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style BD fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style FX fill:#fff5f5,stroke:#fa5252,color:#1e1e1e
+    style OK fill:#ebfbee,stroke:#40c057,color:#1e1e1e
+```
+
+### /plan
+
+Create a phase plan that scopes work, defines high-level tasks, and identifies dependencies.
+
+- **Agent:** Ada (architect)
+- **Requires:** PRD APPROVED + Architecture APPROVED
+- **Output:** `docs/plans/NN-plan-{feature}.md` with status DRAFT → APPROVED
+- **Key:** This is a **planning document** — scope, task breakdown, dependencies. Not a spec.
+
+### /research
+
+Validate technical assumptions from the plan against real APIs, libraries, and codebase.
+
+- **Agent:** Smith (investigator)
+- **Requires:** Plan APPROVED
+- **Output:** `docs/research/NN-research-{topic}.md`
+- **What happens:**
+  1. Smith reads the plan and extracts all external dependencies and technical assumptions
+  2. Investigates each using official docs (context7), GitHub examples, WebFetch, and codebase analysis
+  3. Classifies each assumption: **CONFIRMED**, **CONTRADICTED**, or **PARTIALLY CONFIRMED** with evidence
+  4. Documents contradictions with plan-vs-reality comparison and recommendations
+  5. If contradictions found, you decide: adjust the plan first or proceed with known risks
+
+**Why this step exists:** Without research, specs are based on assumptions. When supervisors hit reality during implementation, they discover mismatches and create new tasks — this is the root cause of task drift.
+
+### /spec
+
+Create a detailed technical specification grounded in validated research.
+
+- **Agent:** Ada (architect)
+- **Requires:** Plan APPROVED + Research docs (warns if missing)
+- **Output:** `docs/specs/NN-spec-{feature}.md` with status DRAFT → APPROVED
+- **Key:** Ada reads the research docs first and designs around verified facts, not assumptions. If research contradicted a plan assumption, the spec follows reality, not the plan.
+
+### /tasks
+
+Decompose a spec into trackable epics and issues.
+
+- **Agent:** Fernando (beads-owner)
+- **Requires:** Spec APPROVED + PRD
+- **Output:** Beads (epics + issues) in the beads database
+- **Two modes:**
+  - **Full decomposition** — from a spec: creates epics and issues with reference-only fields
+  - **Ad-hoc** — from user input: creates individual issues without requiring a spec
+
+**Reference-only beads — critical design decision:**
+
+Beads are tracking artifacts that **point to** specs — they are not specs themselves.
+
+| Field | Contains | Does NOT contain |
+|-------|----------|-----------------|
+| `--design` | `See spec.md § Section 3` | Copied spec content |
+| `--external-ref` | `SPEC §7.4 \| PLAN task 06.03` | Summarized requirements |
+| `--acceptance` | `API returns paginated results` | `Use Prisma cursor-based pagination` |
+| `--description` | Why this task exists | How to implement it |
+
+**Why:** Each summarization step loses nuance. When supervisors treat the bead as source of truth instead of reading the actual spec, implementation gaps emerge — the root cause of task drift.
+
+**Gate:** Stage 2 is complete when the spec is APPROVED and beads are created. Proceed to Stage 3.
+
+---
+
+## Stage 3 — Implementation
+
+![Stage 3 — Implementation](docs/diagrams/mister-anderson-implementation.png)
+
+Repeatable per task. Investigate, implement, review, QA — with rework loops.
+
+```mermaid
+flowchart TD
+    PK["bd ready — pick task"]
+    INV["/investigate → Sherlock"]
+    DR{{"SPEC_DRIFT?"}}
+    DRF["update spec? proceed? skip?"]
+    DO["/do → supervisor"]
+    SUP["supervisor implements\n→ COMPLETED comment"]
+    IR["status: in-review\nlabel: needs-review"]
+    REV["/review → Linus"]
+    VR{{"verdict?"}}
+    APP["APPROVE"]
+    REW["NEEDS-REWORK\nauto-dispatch supervisor"]
+    QA["/quality → Quinn"]
+    VQ{{"QA verdict?"}}
+    PASS["PASS → close / merge"]
+    FAIL["FAIL → rework / follow-up / override"]
+    NEXT["→ pick next task"]
+
+    PK --> INV --> DR
+    DR -- yes --> DRF
+    DR -- no --> DO
+    DO --> SUP --> IR --> REV --> VR
+    VR -- APPROVE --> APP --> QA --> VQ
+    VR -- NEEDS-REWORK --> REW -.-> REV
+    VQ -- PASS --> PASS --> NEXT
+    VQ -- FAIL --> FAIL -.-> QA
+
+    style DR fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style VR fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style VQ fill:#fff9db,stroke:#fab005,color:#1e1e1e
+    style DRF fill:#fff5f5,stroke:#fa5252,color:#1e1e1e
+    style REW fill:#fff5f5,stroke:#fa5252,color:#1e1e1e
+    style FAIL fill:#fff5f5,stroke:#fa5252,color:#1e1e1e
+    style PASS fill:#ebfbee,stroke:#40c057,color:#1e1e1e
+```
+
+### /investigate
+
+Run codebase investigation on a bead task before implementation.
+
+- **Agent:** Sherlock (research)
+- **Input:** Bead ID (or picks from `bd ready`)
+- **What happens:**
+  1. Reads full bead context — description, acceptance criteria, design notes, epic design doc
+  2. Dispatches Sherlock to trace code paths, identify root cause, map affected files
+  3. Sherlock spot-checks the spec's Research Findings against the current codebase
+  4. If **SPEC_DRIFT** detected, you decide: update the spec, proceed with known drift, or skip the task
+  5. Findings logged as structured `INVESTIGATION:` comment on the bead
+
+### /do
+
+Dispatch the implementation supervisor for a bead task.
+
+- **Agent:** Dynamic supervisor (from `assignee` field)
+- **Requires:** Bead exists (investigation recommended but not required)
+- **What happens:**
+  1. Reads the `assignee` field to resolve the correct supervisor (e.g., `rust-supervisor`)
+  2. If supervisor not found, lists available supervisors or suggests `/add-supervisor`
+  3. Checks for existing branch (from previous rework cycle) — asks to continue or create fresh
+  4. Dispatches the supervisor with full context
+  5. The PreToolUse hook automatically injects engineering discipline (Rules 0-5)
+
+**The supervisor then:**
+- Creates branch `feature/{task-id-kebab-case}` from the specified base branch
+- Marks bead `in_progress`
+- Implements with frequent commits
+- Logs `DECISION:` and `DEVIATION:` comments for non-trivial choices
+- Logs a `COMPLETED:` comment summarizing what was done
+- Pushes, adds `needs-review` label, marks bead `in-review`
+
+### /review
+
+Code review gate — dispatches Linus to analyze the implementation branch.
+
+- **Agent:** Linus (code-reviewer) + Fernando (beads-owner) for findings tracking
+- **Requires:** Bead with `needs-review` label
+- **What happens:**
+  1. Linus analyzes the branch diff against acceptance criteria
+  2. Each finding gets a severity: `CRITICAL`, `WARNING`, `SUGGESTION`, `GOOD`
+  3. Logs a structured `REVIEW:` comment with verdict
+
+**If APPROVE:**
+- Labels: `needs-review` → `approved`
+- All non-`[GOOD]` findings tracked as issues in the parent epic
+- Ready for QA
+
+**If NEEDS-REWORK:**
+- Labels: `needs-review` → `needs-rework`, status → `in_progress`
+- `SUGGESTION` findings tracked as separate issues (out of scope for rework)
+- Auto-dispatches the implementation supervisor with `y/n` confirmation
+- Supervisor reads the REVIEW comment to know exactly what to fix (CRITICAL + WARNING)
+- After rework, the task returns to `/review`
+
+**Escape hatch:** Answer `n` to the dispatch confirmation. Labels are already set — resume later with `/do`.
+
+### /quality
+
+QA finalization gate — last gate before merge.
+
+- **Agent:** Quinn (qa-gate) + Fernando (beads-owner) for findings tracking
+- **Requires:** Bead with `approved` label (passed code review)
+- **What happens:**
+  1. Quinn validates: spec conformity, user stories, boundary/edge cases, decision trail audit
+  2. Runs: tests, build, lint, functional verification
+  3. Verdict: `PASS` or `FAIL` with severity (BLOCKER/MAJOR/MINOR)
+
+**If PASS:**
+- Label `qa-passed` added
+- You close the bead and merge
+
+**If FAIL:**
+- You decide: **rework** (auto-dispatches supervisor), **follow-up** (create new bead for gaps), or **override** (merge anyway)
+- Non-scope findings (MINOR, EXTRA, RISK) tracked as separate issues
+- Rework loops back to `/quality` after the supervisor finishes
+
+**Gate:** QA PASS means the task is ready for merge. You create the PR and merge when satisfied.
+
+---
+
+## Orchestrators
+
+Orchestrators sequence the atomic skills within a stage. They scan for existing artifacts, skip completed steps, and dispatch sub-skills in order.
+
+### /product
+
+Stage 1 orchestrator. Walks through manifesto → requirements → architecture, skipping completed steps.
+
+```
+/product           # guided flow through Stage 1
+/product status    # show Stage 1 state only
+```
+
+### /specification
+
+Stage 2 orchestrator. Walks through plan → research → spec → tasks for a specific phase.
+
+```
+/specification 01     # guided flow for Phase 01
+/specification status # show all phase states
+```
+
+### /implementation
+
+Stage 3 orchestrator. Shows task progress, picks a task, and routes through investigate → do → review → quality.
+
+```
+/implementation 01       # guided flow for Phase 01 tasks
+/implementation bd-001.2 # jump to a specific task
+```
+
+### /workflow
+
+Meta-orchestrator across all stages. Shows full project state, suggests the next step, and routes to stage orchestrators or individual skills.
+
+```
+/workflow           # full state display + next suggestion
+/workflow 1         # delegate to /product
+/workflow 2         # delegate to /specification (asks phase NN)
+/workflow 3         # delegate to /implementation (asks phase NN)
+/workflow next      # determine + dispatch next pending step
+/workflow spec      # jump to /spec with prerequisite warnings
+```
+
+When suggesting the next step, `/workflow` presents both options:
+```
+Next step: Research (Phase 01)
+  Guided:  /specification 01  — walks through remaining steps
+  Direct:  /research          — jump straight to research
+```
+
+**Jump warnings:** If you request a step with unmet prerequisites, `/workflow` warns but does not block:
+```
+Warning: You are about to run /spec but the following prerequisites are missing:
+  - Research: no docs found in docs/research/01-*
+
+Without validated research, the spec will be based on unvalidated assumptions.
+This historically causes task drift during implementation.
+
+Do you want to:
+  1. Run /research first (recommended)
+  2. Proceed to /spec anyway
+  3. Cancel
+```
 
 ---
 
 ## Agents
 
-### Core Agents (included with plugin)
+![Agent — Skill Mapping](docs/diagrams/mister-anderson-agent-skill.png)
 
-| Agent | Persona | Role | Type |
-|-------|---------|------|------|
-| **product-manager.md** | Grace | Requirements elicitation, PRD creation, product strategy | Document advisor |
-| **architect.md** | Ada | System design, specs, implementation plans | Document advisor |
-| **research.md** | Sherlock | Codebase investigation, root cause analysis | Read-only investigator |
-| **code-reviewer.md** | Linus | Quality gate, structured review reports | Read-only reviewer |
-| **qa-gate.md** | Quinn | QA finalization: spec conformity, tests, build, lint | QA gate |
-| **beads-owner.md** | Fernando | Product owner, creates epics and issues | Task creator |
-| **discovery.md** | Daphne | Supervisor factory: detects tech stack, creates supervisors | Factory agent |
+### Core Agents
 
-### Dynamic Supervisors (created per project)
+| Agent | Persona | Role | Dispatched by |
+|-------|---------|------|---------------|
+| `product-manager.md` | **Grace** | Requirements elicitation, PRD creation | `/requirements` |
+| `architect.md` | **Ada** | System design, specs, plans | `/architecture`, `/plan`, `/spec` |
+| `investigator.md` | **Smith** | Feasibility research, assumption validation | `/research` |
+| `research.md` | **Sherlock** | Codebase investigation, root cause analysis | `/investigate` |
+| `code-reviewer.md` | **Linus** | Code review gate, structured review reports | `/review` |
+| `qa-gate.md` | **Quinn** | QA finalization: spec conformity, tests, build, lint | `/quality` |
+| `beads-owner.md` | **Fernando** | Product owner, creates epics and issues | `/tasks`, `/review` (findings), `/quality` (findings) |
+| `discovery.md` | **Daphne** | Supervisor factory: detects tech stack, creates supervisors | `/setup`, `/add-supervisor` |
 
-Created by the Discovery agent based on your tech stack:
+### Dynamic Supervisors
+
+Created by Daphne (Discovery) based on your tech stack. Each gets the `-supervisor` suffix which triggers the discipline hook.
 
 | Technology | Supervisor | Persona |
 |------------|-----------|---------|
-| Node.js (Express/Fastify/NestJS) | `node-backend-supervisor` | Nina |
-| Python (FastAPI/Django/Flask) | `python-backend-supervisor` | Tessa |
-| Go | `go-supervisor` | Greta |
 | Rust | `rust-supervisor` | Neo |
+| Node.js (Express/Fastify/NestJS) | `node-backend-supervisor` | Nina |
 | React/Next.js | `react-supervisor` | Luna |
 | Vue/Nuxt | `vue-supervisor` | Violet |
-| Svelte | `svelte-supervisor` | -- |
-| Angular | `angular-supervisor` | -- |
+| Python (FastAPI/Django/Flask) | `python-backend-supervisor` | Tessa |
+| Go | `go-supervisor` | Greta |
 | Docker/CI/Terraform | `infra-supervisor` | Olive |
 | Flutter | `flutter-supervisor` | Maya |
-| iOS | `ios-supervisor` | Isla |
-| Android | `android-supervisor` | Ava |
-| Blockchain/Web3 | `blockchain-supervisor` | Nova |
-| ML/AI | `ml-supervisor` | Iris |
+| iOS/Android/Blockchain/ML | See `/add-supervisor` | — |
 
-Need a supervisor that doesn't exist? Run `/add-supervisor {tech}`.
+Need one that doesn't exist? Run `/add-supervisor {tech}`.
+
+### Agent Classification
+
+| Category | Writes code? | Writes docs? | Creates beads? | Discipline hook? |
+|----------|:----------:|:----------:|:------------:|:--------------:|
+| **Document advisors** (Grace, Ada) | No | Yes | No | No |
+| **Investigators** (Smith, Sherlock) | No | Yes (research docs) | No | No |
+| **Quality gates** (Linus, Quinn) | No | No | No | No |
+| **Task creator** (Fernando) | No | No | Yes | No |
+| **Factory** (Daphne) | Agent files only | No | No | No |
+| **Supervisors** (`*-supervisor`) | Yes | No | No | **Yes** |
+
+The `-supervisor` suffix is the trigger — the PreToolUse hook injects engineering discipline whenever a supervisor is dispatched.
 
 ---
 
-## How It Works
+## Discipline & Comment Trail
 
-### Task Routing
+### Supervisor Rules
 
-When Fernando (beads-owner) creates a task, he sets the supervisor as the assignee:
-
-```bash
-bd create "Fix parser bug" --assignee rust-supervisor --spec-id "PRD 9.14" --external-ref "ARCH 6 | PLAN 3" ...
-```
-
-The `/start-task` skill reads the `assignee` field and dispatches the correct supervisor automatically. If the supervisor doesn't exist, it suggests `/add-supervisor`.
-
-### Investigation Before Implementation
-
-Every task can go through an investigation phase. Sherlock (research agent) reads the bead, traces code paths, identifies root cause, and logs structured findings:
-
-```
-INVESTIGATION:
-Root cause: Missing null check in parseConfig() at config.ts:42
-Files: config.ts:42, types.ts:15
-Approach: Add optional chaining and fallback default
-Risks: Other callers may depend on the thrown error
-Related tests: config.test.ts
-```
-
-Implementation supervisors read this via **Rule 0** ("Read the Bead First") before writing any code.
-
-### Discipline Enforcement
-
-All implementation supervisors follow 5 mandatory rules:
+All implementation supervisors follow 6 mandatory rules, auto-injected by the discipline hook:
 
 | Rule | Principle |
 |------|-----------|
-| **Rule 0** | Read the bead comments before implementing |
+| **Rule 0** | Follow instructions exactly — no unilateral decisions. Read bead comments first |
 | **Rule 1** | Look at actual data before coding against it |
 | **Rule 2** | Test functionally — close the loop |
 | **Rule 3** | Use available tools to verify |
 | **Rule 4** | Log decisions (`DECISION:`) and deviations from spec (`DEVIATION:`) as bead comments |
-| **Rule 5** | Log completion summary with files, decision/deviation counts, tests (mandatory) |
-
-### Code Review Gate
-
-After implementation, the supervisor marks the bead `in-review` with label `needs-review`. When you run `/review-task`:
-
-1. **Linus** (code-reviewer) analyzes the branch diff against acceptance criteria
-2. Each finding has a severity: `CRITICAL`, `WARNING`, `SUGGESTION`, `GOOD`
-3. Verdict: `APPROVE` or `NEEDS-REWORK`
-4. Non-`[GOOD]` findings that aren't addressed in the current cycle are automatically tracked as issues under the **parent epic** of the reviewed task (falls back to a "Review Findings" epic for standalone tasks) with `finding:{severity}` labels
-5. If `NEEDS-REWORK`, the task goes back to the original implementation supervisor via `/start-task` — the specialist who built it is best positioned to fix the findings
+| **Rule 5** | Log completion summary (`COMPLETED:`) — mandatory before marking in-review |
+| **Rule 6** | Never close beads — your job ends at `in-review` |
 
 ### Comment Trail
 
 Every bead accumulates a structured history:
 
 ```
-INVESTIGATION: (Sherlock)    -- what was found in the codebase
-DECISION:      (supervisor)  -- non-trivial implementation choices
-DEVIATION:     (supervisor)  -- where implementation differs from spec and why
-COMPLETED:     (supervisor)  -- what was implemented and how
-REVIEW:        (Linus)       -- code quality findings with severities and verdict
-QA:            (Quinn)       -- spec conformity, tests, build, lint, verdict
+INVESTIGATION: (Sherlock)    — what was found in the codebase before implementation
+DECISION:      (supervisor)  — non-trivial implementation choices and reasoning
+DEVIATION:     (supervisor)  — where implementation differs from spec and why
+COMPLETED:     (supervisor)  — what was implemented, files changed, tests run
+REVIEW:        (Linus)       — code quality findings with severities and verdict
+QA:            (Quinn)       — spec conformity, tests, build, lint, final verdict
 ```
 
-This trail persists across sessions and compaction. Any agent or human can reconstruct the full context.
+This trail survives session restarts and context compaction. Any agent or human can reconstruct full context:
 
-### Branch-Per-Task Workflow
+```bash
+bd comments bd-001.2
+```
 
-Every implementation task follows:
+### Findings Tracking
 
-1. Create branch: `feature/{task-id-kebab-case}`
-2. Mark bead `in_progress`
-3. Implement with frequent commits
-4. Push to remote
-5. Add `needs-review` label
-6. Mark bead `in-review`
-7. **You** merge via PR when satisfied
+When `/review` or `/quality` produce findings that won't be addressed in the current cycle, Fernando automatically creates tracked issues:
 
-Banned: working on main, implementing without a bead ID, self-merging.
+1. Each finding is checked against existing open tasks (deduplication)
+2. If already covered → links back with comment + `discovered-from` dependency
+3. If new → creates issue under the **parent epic** with `finding:{severity}` label
+4. Standalone tasks (no parent) fall back to a "Review Findings" epic
+
+---
+
+## Skill Tag Schema
+
+![Tag Schema Lifecycle](docs/diagrams/mister-anderson-tag-schema.png)
+
+Every skill follows a standardized tag schema for consistent structure:
+
+### Atomic Skill Tags
+
+| Tag | Purpose | Example |
+|-----|---------|---------|
+| `<on-init>` | Parse arguments from user input | Extract bead ID, paths, focus areas |
+| `<on-check>` | Validate prerequisites | Docs exist? Status APPROVED? |
+| `<on-check-fail if="X">` | Handle missing prerequisite X | Recommend earlier skill, warn, or block |
+| `<on-execute>` | Main execution — numbered steps, agent dispatch | Locate docs, dispatch Ada, wait for result |
+| `<on-complete>` | Post-execution verification | Confirm artifact created, show status |
+| `<on-complete if="condition">` | Conditional post-execution | `if="status=DRAFT"` → inform user can iterate |
+| `<on-next>` | Recommend the next skill in the pipeline | "Proceed with `/spec`" |
+
+### Orchestrator Tags
+
+| Tag | Purpose |
+|-----|---------|
+| `<on-state>` | Scan artifacts, display stage/phase state |
+| `<on-step name="X">` | Define what happens at step X in the sequence |
+| `<on-step-skip if="X_done">` | Skip step X if already completed |
+
+---
+
+## Infrastructure Skills
+
+### /setup
+
+One-time project bootstrap. Initializes beads, detects tech stack, creates supervisors.
+
+```
+/setup
+```
+
+**What happens:**
+1. Checks beads CLI and Dolt server are available
+2. Initializes beads (`bd init`) if not already done
+3. Detects if bootstrap was previously completed (idempotent)
+4. Gets project info and detects tech stack
+5. Creates `CLAUDE.md` and `AGENTS.md` from templates with project info
+6. Dispatches Daphne to create tech-specific supervisors in `.claude/agents/`
+7. Writes version file for update detection
+8. Cleans up legacy local copies (from pre-0.1.0 versions) if found
+
+### /update
+
+Update the plugin and clean up legacy local copies.
+
+```
+/update
+```
+
+**What happens:**
+1. Compares installed version with latest remote version
+2. Detects legacy local copies (skills, hooks, core agents from older versions)
+3. Removes legacy copies after user confirmation — dynamic supervisors are never touched
+4. Optionally re-runs Discovery to refresh supervisor templates
+5. Reminds to update the Claude Code plugin cache and restart
+
+**What the plugin provides** (no local copy needed): skills, core agents, hooks.
+**What stays local** (never touched): CLAUDE.md, AGENTS.md, dynamic supervisors, .beads/, settings.
+
+### /add-supervisor
+
+Create a new supervisor for a technology not yet covered.
+
+```
+/add-supervisor rust
+```
+
+**What happens:**
+1. Checks if a supervisor already exists for the technology
+2. Dispatches Daphne in on-demand mode — creates only the requested supervisor
+3. Updates the Supervisors section in CLAUDE.md
 
 ---
 
@@ -314,8 +620,8 @@ Banned: working on main, implementing without a bead ID, self-merging.
 
 | Hook | Trigger | Purpose |
 |------|---------|---------|
-| **inject-discipline-reminder.sh** | `PreToolUse` (Task tool) | Injects discipline skill reminder when dispatching `*-supervisor` agents |
-| **session-start.sh** | `SessionStart` | Shows task context: in-progress, ready, blocked, stale, and labeled beads. Checks for plugin updates |
+| `inject-discipline-reminder.sh` | `PreToolUse` (Task tool) | Injects discipline skill when dispatching `*-supervisor` agents |
+| `session-start.sh` | `SessionStart` | Shows task dashboard: in-progress, ready, blocked, stale, labeled beads. Checks for plugin updates |
 
 ---
 
@@ -326,520 +632,173 @@ mister-anderson/
 |-- .claude-plugin/
 |   +-- plugin.json              # Plugin manifest
 |-- agents/
-|   |-- product-manager.md       # Grace - requirements elicitation, PRD creation
-|   |-- architect.md             # Ada - system design, specs
-|   |-- research.md              # Sherlock - codebase investigation (read-only)
-|   |-- code-reviewer.md         # Linus - quality gate (read-only)
-|   |-- qa-gate.md               # Quinn - QA finalization gate
-|   |-- beads-owner.md           # Fernando - product owner (task creator)
-|   +-- discovery.md             # Daphne - supervisor factory
+|   |-- product-manager.md       # Grace — requirements elicitation
+|   |-- architect.md             # Ada — system design, specs, plans
+|   |-- investigator.md          # Smith — feasibility research
+|   |-- research.md              # Sherlock — codebase investigation
+|   |-- code-reviewer.md         # Linus — code review gate
+|   |-- qa-gate.md               # Quinn — QA finalization gate
+|   |-- beads-owner.md           # Fernando — product owner
+|   +-- discovery.md             # Daphne — supervisor factory
+|-- docs/
+|   +-- diagrams/                # Excalidraw sources + PNG exports
 |-- hooks/
 |   |-- hooks.json               # Hook configuration
 |   |-- inject-discipline-reminder.sh
 |   +-- session-start.sh
 |-- skills/
-|   |-- setup-project/
-|   |   |-- SKILL.md             # Bootstrap skill
-|   |   +-- templates/
-|   |       |-- AGENTS.md        # Agent instructions template
-|   |       |-- BEADS-WORKFLOW.md # Branch-per-task workflow template
-|   |       +-- CLAUDE.md        # Project config template
-|   |-- product-requirements/
-|   |   +-- SKILL.md
-|   |-- architect-solution/
-|   |   +-- SKILL.md
-|   |-- beads-product-owner/
-|   |   +-- SKILL.md
-|   |-- create-bead-issues/
-|   |   +-- SKILL.md
-|   |-- qa-task/
-|   |   +-- SKILL.md
-|   |-- start-task/
-|   |   +-- SKILL.md
-|   |-- review-task/
-|   |   +-- SKILL.md
-|   |-- add-supervisor/
-|   |   +-- SKILL.md
-|   |-- update-plugin/
-|   |   +-- SKILL.md
-|   +-- subagents-discipline/
-|       +-- SKILL.md             # Auto-injected engineering rules
+|   |-- manifesto/               # Stage 1: product vision
+|   |-- requirements/            # Stage 1: PRD creation (Grace)
+|   |-- architecture/            # Stage 1: system design (Ada)
+|   |-- plan/                    # Stage 2: phase planning (Ada)
+|   |-- research/                # Stage 2: assumption validation (Smith)
+|   |-- spec/                    # Stage 2: technical spec (Ada)
+|   |-- tasks/                   # Stage 2: bead creation (Fernando)
+|   |-- investigate/             # Stage 3: codebase investigation (Sherlock)
+|   |-- do/                      # Stage 3: supervisor dispatch
+|   |-- review/                  # Stage 3: code review (Linus)
+|   |-- quality/                 # Stage 3: QA validation (Quinn)
+|   |-- product/                 # Orchestrator: Stage 1
+|   |-- specification/           # Orchestrator: Stage 2
+|   |-- implementation/          # Orchestrator: Stage 3
+|   |-- workflow/                # Meta-orchestrator
+|   |-- setup/                   # Infrastructure: project bootstrap
+|   |   +-- templates/           # CLAUDE.md, AGENTS.md, BEADS-WORKFLOW.md
+|   |-- update/                  # Infrastructure: plugin update
+|   |-- add-supervisor/          # Infrastructure: create supervisor
+|   +-- subagents-discipline/    # Internal: engineering rules (auto-injected)
 |-- LICENSE
 +-- README.md
 ```
 
 ---
 
-## Agent Classification
-
-Agents are categorized by what they can do:
-
-| Category | Suffix | Writes code? | Writes docs? | Creates beads? | Gets discipline hook? |
-|----------|--------|-------------|-------------|----------------|----------------------|
-| **Document advisors** | none | No | Yes (PRD, specs) | No | No |
-| **Read-only advisors** | none | No | No | No | No |
-| **QA gate** | none | No | No | No | No |
-| **Task creator** | none | No | No | Yes | No |
-| **Factory** | none | Yes (agent files only) | No | No | No |
-| **Implementation supervisors** | `-supervisor` | Yes | No | No | Yes |
-
-The `-supervisor` suffix is the key — it triggers the PreToolUse hook that injects engineering discipline.
-
----
-
 ## Quick Start
 
 ```bash
-# 1. Add the marketplace
-/plugin marketplace add websublime/mister-anderson
+# Stage 1 — Product Discovery (one-shot)
+/setup                    # bootstrap project
+/workflow                 # see project state
 
-# 2. Install the plugin
-/plugin install mister-anderson@websublime-mister-anderson
+/manifesto                # define product vision (optional)
+/requirements             # create PRD with Grace → APPROVED
+/architecture             # design architecture with Ada → APPROVED
 
-# 3. In your project, run setup
-/setup-project
+# Stage 2 — Specification (per phase)
+/plan                     # plan phase scope with Ada → APPROVED
+/research                 # validate assumptions with Smith
+/spec                     # write spec with Ada + research → APPROVED
+/tasks                    # create beads from spec with Fernando
 
-# 4. Define product requirements (PRD)
-/product-requirements
+# Stage 3 — Implementation (per task)
+/investigate              # Sherlock investigates the codebase
+/do                       # dispatch supervisor to implement
+/review                   # Linus reviews the code
+/quality                  # Quinn validates spec conformity + tests
+# → merge when satisfied
 
-# 5. Design your solution from the PRD
-/architect-solution
-
-# 6. Create tasks from the design
-/beads-product-owner
-
-# 7. Start working on a task
-/start-task
-
-# 8. When implementation is done, review it
-/review-task
-
-# 9. QA validation: conformity, tests, build, lint
-/qa-task
-
-# 10. Merge when satisfied
+# Or use orchestrators for guided flow:
+/product                  # guided Stage 1
+/specification 01         # guided Stage 2 for Phase 01
+/implementation 01        # guided Stage 3 for Phase 01
+/workflow next            # auto-detect and suggest next step
 ```
 
 ---
 
-## How-To Guides
+## All Skills Reference
 
-### Setting Up a New Project
+### Stage 1 — Product Discovery
 
-Setup requires an **existing project skeleton** — the Discovery agent scans for files like `package.json`, `Cargo.toml`, `go.mod`, `requirements.txt`, etc. to detect your tech stack and create the right supervisors. If you run setup on an empty directory, no supervisors will be created because there's nothing to detect.
+| Skill | Command | Agent | Purpose |
+|-------|---------|-------|---------|
+| manifesto | `/manifesto` | — | Product vision, principles, governing laws |
+| requirements | `/requirements` | Grace | PRD from raw idea |
+| architecture | `/architecture` | Ada | High-level system design |
 
-**Prerequisite:** Your project already has its initial structure (at minimum, the manifest files for your tech stack).
+### Stage 2 — Specification
 
-```
-/setup-project
-```
+| Skill | Command | Agent | Purpose |
+|-------|---------|-------|---------|
+| plan | `/plan` | Ada | Phase scope, task breakdown, dependencies |
+| research | `/research` | Smith | Validate plan assumptions against reality |
+| spec | `/spec` | Ada | Technical spec grounded in research |
+| tasks | `/tasks` | Fernando | Decompose spec into beads (or ad-hoc issues) |
 
-**What happens:**
-1. Beads task tracking is initialized (`bd init`)
-2. Daphne (Discovery agent) scans your codebase to detect tech stacks (package.json, Cargo.toml, go.mod, etc.)
-3. For each detected stack, a specialized supervisor is created in `.claude/agents/` by fetching from the external directory and injecting the beads workflow
-4. Core agents are copied: product-manager, architect, research, code-reviewer, qa-gate, beads-owner, discovery
-5. Templates are installed: CLAUDE.md, AGENTS.md, BEADS-WORKFLOW.md
-6. Hooks are configured for discipline enforcement and session context
+### Stage 3 — Implementation
 
-**After setup, verify:**
-- `.claude/agents/` contains your tech-specific supervisors (e.g., `react-supervisor.md`, `rust-supervisor.md`)
-- `.claude/CLAUDE.md` exists with your project configuration
-- `bd list` works and shows no issues yet
+| Skill | Command | Agent | Purpose |
+|-------|---------|-------|---------|
+| investigate | `/investigate [bead-id]` | Sherlock | Codebase investigation + spec drift detection |
+| do | `/do [bead-id]` | {supervisor} | Resolve supervisor, manage branch, dispatch |
+| review | `/review [bead-id]` | Linus + Fernando | Code review gate + findings tracking |
+| quality | `/quality [bead-id]` | Quinn + Fernando | QA gate + findings tracking |
 
-**What if your project evolves?** Setup is a one-time bootstrap. If you later add a new technology to your project (e.g., a Rust service in a previously Node.js-only monorepo), you don't re-run setup — you use `/add-supervisor rust` to create the new supervisor on demand. See [Adding a New Supervisor](#adding-a-new-supervisor-monorepo-scenario).
+### Orchestrators
 
----
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| product | `/product` | Stage 1 guided flow |
+| specification | `/specification [phase]` | Stage 2 guided flow |
+| implementation | `/implementation [phase\|bead-id]` | Stage 3 guided flow |
+| workflow | `/workflow [1\|2\|3\|next\|skill]` | Meta-orchestrator, project state |
 
-### Defining Product Requirements (PRD)
+### Infrastructure
 
-Before designing a solution, define what needs to be built and why. Grace (product-manager) transforms your raw idea into a structured PRD through guided discovery.
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| setup | `/setup` | One-time project bootstrap |
+| update | `/update` | Plugin update + legacy cleanup |
+| add-supervisor | `/add-supervisor [tech]` | Create supervisor for a new technology |
 
-```
-/product-requirements
-```
+### Internal
 
-**What happens:**
-1. You're asked for existing documents (briefs, notes, sketches) and where to save the PRD
-2. Grace (product-manager) is dispatched and conducts a discovery interview — structured questions to extract requirements
-3. She applies product frameworks (JTBD for user stories, RICE/Kano for prioritization) to structure the PRD
-4. The PRD is written to the agreed path (default: `docs/prd/PRD-{name}.md`) with status **DRAFT**
-5. You review and request changes — Grace iterates via Edit until you're satisfied
-6. Once approved, Grace updates status to **APPROVED**
-
-**The PRD includes:** Problem statement, objectives, target users, user stories with acceptance criteria, functional/non-functional requirements with priority classification, out-of-scope boundaries, dependencies, and risks.
-
-**Iterating on a DRAFT:** You can request changes directly — "add this user story", "the scope is too broad", "what about edge case X". Grace edits the file in place, keeping the DRAFT status until you approve.
-
-**Best practice:** Only pass APPROVED PRDs to `/architect-solution`. The PRD is the source of truth for what gets built — ambiguity here causes deviations downstream.
-
----
-
-### Designing a Solution
-
-Once you have an approved PRD, design the technical solution with Ada (architect). This produces design docs and specs that become the implementation contract.
-
-```
-/architect-solution
-```
-
-**What happens:**
-1. You're asked for the PRD path and where to save the spec (default: `docs/spec/SPEC-{name}.md`)
-2. Ada reads the PRD, analyzes the codebase, and researches patterns and dependencies
-3. Produces a design document with architecture decisions, data models, API contracts, and implementation plans — written to file with status **DRAFT**
-4. You review and iterate — Ada edits the spec via Edit until you approve
-5. Once approved, Ada updates status to **APPROVED**
-6. The spec references the source PRD for full traceability
-
-**Iterating on a DRAFT:** Same as with the PRD — you can request changes, challenge decisions, ask about trade-offs. Ada edits in place.
-
-**Best practice:** Run this after `/product-requirements` and before creating any tasks. The spec references the PRD and becomes the implementation contract that supervisors follow.
+| Skill | Purpose |
+|-------|---------|
+| subagents-discipline | Engineering rules auto-injected into supervisors (Rules 0-6) |
 
 ---
 
-### Creating Tasks from a Design
+## FAQ
 
-Once you have a design, Fernando (beads-owner) breaks it down into epics and tasks with acceptance criteria.
+**Q: Do I need to run all 3 stages in order?**
+A: Stage 1 is one-shot. After that, you can jump to any skill — `/workflow` will warn about missing prerequisites but won't block you. Use orchestrators for guided flow or individual skills for quick jumps.
 
-**For epics with subtasks:**
-```
-/beads-product-owner
-```
+**Q: What if I already have a PRD and spec from elsewhere?**
+A: Place them in the expected paths (`docs/prd/`, `docs/specs/`) with `Status: APPROVED` in the frontmatter. `/workflow` will detect them and skip those steps.
 
-Fernando creates epics and child tasks. Each task includes:
-- Clear description tied to the design
-- Acceptance criteria (what "done" means)
-- The `--assignee` field set to the correct implementation supervisor
-- The `--spec-id` pointing to the main PRD document
-- The `--external-ref` for additional references (architecture specs, plans, etc.)
-- Priority and dependency information
+**Q: Why research before spec? Isn't that overkill?**
+A: Without research, Ada writes specs based on plan assumptions. When supervisors hit reality (wrong API field names, missing endpoints, version-specific behavior), they create ad-hoc tasks — this is task drift. Research catches these before the spec is written.
 
-**For individual well-defined issues:**
-```
-/create-bead-issues
-```
+**Q: Why are beads "reference-only"?**
+A: Each summarization step loses nuance. When beads contain copied spec content, supervisors treat the bead as the source of truth instead of reading the actual spec. Implementation gaps emerge. Beads point to specs — they don't replace them.
 
-Use this when you already know exactly what needs to be done and don't need the full epic structure.
+**Q: What happens if a supervisor doesn't exist for my task?**
+A: `/do` checks the `assignee` field, lists available supervisors, and suggests `/add-supervisor {tech}` if none match. Discovery creates the supervisor from an external template directory.
 
-**After creating tasks, verify routing:**
-```bash
-bd show bd-001.1 --json
-```
-Check that the `assignee` field contains `{name}-supervisor` and that the referenced supervisor exists in `.claude/agents/`.
+**Q: Can I skip investigation and go straight to implementation?**
+A: Yes. `/do` warns that no investigation exists but lets you proceed. Investigation is recommended but not required.
 
----
+**Q: How do rework loops work?**
+A: When `/review` returns NEEDS-REWORK or `/quality` returns FAIL, the skill auto-dispatches the original supervisor (from the bead's `assignee`) in the same session after `y/n` confirmation. The supervisor reads the REVIEW/QA comment to know what to fix. After rework, the task returns to the same gate.
 
-### Starting Work on a Task
-
-This is the main entry point for implementation. The skill handles everything: resolving what to work on, investigating the codebase, and dispatching the right supervisor.
-
-**Pick from ready tasks (recommended):**
-```
-/start-task
-```
-Shows all unblocked tasks from `bd ready` with ID, title, priority, and labels. Pick by order and priority.
-
-**Start a specific task:**
-```
-/start-task bd-001.2
-```
-
-**What happens step by step:**
-1. **Resolve** — Validates the bead exists and reads full context (description, acceptance, design, notes)
-2. **Epic context** — If this is an epic child (e.g., `bd-001.2`), reads the parent epic's design doc as the implementation contract
-3. **Supervisor routing** — Reads the `assignee` field from the bead, verifies the agent file exists in `.claude/agents/`
-4. **Investigation** — Checks if Sherlock has already investigated (looks for `INVESTIGATION:` in bead comments). If not, asks if you want to dispatch research first
-5. **Branch check** — Detects if a branch already exists (from a previous NEEDS-REWORK cycle) and asks whether to continue on it or start fresh
-6. **Dispatch** — Sends the task to the resolved supervisor with full context. The PreToolUse hook automatically injects engineering discipline (Rules 0-5)
-
-**The supervisor then:**
-- Creates branch `feature/{task-id-kebab-case}`
-- Marks bead `in_progress`
-- Implements with frequent commits
-- Pushes to remote
-- Logs a `COMPLETED:` comment with summary of files changed, decisions made, and tests run
-- Adds `needs-review` label
-- Marks bead `in-review`
-
----
-
-### Reviewing Completed Work
-
-After a supervisor finishes implementation, the task enters the review gate. You control when this happens.
-
-**List all tasks awaiting review:**
-```
-/review-task
-```
-Shows beads with the `needs-review` label. Pick which one to review.
-
-**Review a specific task:**
-```
-/review-task bd-001.2
-```
-
-**What happens step by step:**
-1. **Context** — Reads the bead, its comments (especially the `COMPLETED:` summary), and identifies the implementation branch
-2. **Code review** — Linus (code-reviewer) analyzes the branch diff against acceptance criteria. Each finding gets a severity: `CRITICAL`, `WARNING`, `SUGGESTION`, or `GOOD`
-3. **Verdict** — One of three outcomes:
-
-**APPROVE** — Code review passed:
-- Labels updated: `needs-review` removed, `approved` added
-- Ready for QA validation — run `/qa-task bd-xxx`
-
-**NEEDS-REWORK** — Issues found (critical, warnings, or acceptance criteria unmet):
-- Labels updated: `needs-review` removed, `needs-rework` added
-- You're asked whether to continue on the existing branch or create a fresh one
-- After `SUGGESTION` findings are tracked as separate beads, the skill auto-dispatches the original implementation supervisor (resolved from the bead's `assignee`) in the same session — asking for explicit `y/n` confirmation first
-- The REVIEW comment contains all findings — the supervisor reads it to know exactly what to fix (CRITICAL + WARNING in-scope, SUGGESTIONS tracked separately)
-
-**After any verdict — Track Review Findings:**
-- All non-`[GOOD]` findings that won't be addressed in the current cycle are extracted from the REVIEW comment
-- Fernando (beads-owner) checks each finding against existing open tasks to avoid duplicates — if a finding is already covered by a future task, he adds a comment and `discovered-from` link to that task instead of creating a new one
-- Unmatched findings get a new issue under the **parent epic** of the reviewed task with `finding:{severity}` label, `discovered-from` dependency, and priority mapped from severity (P3/P2/P1). Standalone tasks (no parent epic) fall back to a "Review Findings" epic
-- This ensures suggestions are never lost while avoiding duplicate tracking
-
----
-
-### Handling a NEEDS-REWORK Cycle
-
-When a code review returns `NEEDS-REWORK`, `/review-task` itself re-dispatches the implementation supervisor in the same session after `y/n` confirmation — no need to manually invoke `/start-task` again.
-
-**What the rework dispatch carries over:**
-1. The bead already has an `INVESTIGATION:` comment — Sherlock's research is reused via Rule 0
-2. The existing branch is preserved (or you opt for a fresh one from a chosen base)
-3. The REVIEW comment lists every finding — the supervisor reads it via Rule 0 to know what to fix
-4. The `needs-rework` label tells everyone this is a second pass
-5. SUGGESTION findings are tracked as separate beads in the parent epic, explicitly out-of-scope for the rework dispatch
-
-After the supervisor finishes, the task goes back to `in-review` with `needs-review` label, and you run `/review-task` again.
-
-**Escape hatch:** if you answer `n` to the confirmation (e.g., you want to sleep on it), the labels/status are already set — you can resume later with `/start-task bd-xxx`.
-
----
-
-### QA Validation Before Merge
-
-After code review approves, Quinn (QA gate) validates that the implementation matches the product spec and that the build is healthy. This is the last gate before you merge.
-
-**List all tasks awaiting QA:**
-```
-/qa-task
-```
-Shows beads with the `approved` label. Pick which one to QA.
-
-**QA a specific task:**
-```
-/qa-task bd-001.2
-```
-
-**What happens step by step:**
-1. **Context** — Reads the bead, all comments (COMPLETED, DECISION, DEVIATION, REVIEW), and locates the spec/design doc and PRD
-2. **Conformity check** — Compares each spec requirement against the implementation: CONFORMS, DEVIATES, MISSING, or EXTRA
-3. **User story validation** — Verifies each acceptance criterion is functionally satisfied
-4. **Boundary & edge case analysis** — Checks critical boundaries: empty inputs, max values, error paths, null handling
-5. **Decision trail audit** — Reads DECISION and DEVIATION comments, flags unlogged deviations found in code
-6. **Tests** — Runs the project's test suite
-7. **Build** — Runs the build command
-8. **Lint** — Runs the linter
-9. **Functional verification** — When feasible, exercises the implementation (curl endpoints, run CLI, check outputs)
-10. **Verdict** — PASS or FAIL with severity classification (BLOCKER/MAJOR/MINOR)
-
-**If PASS:**
-- Label `qa-passed` added
-- You're asked if you want to close the bead
-- The branch is ready for merge
-
-**If FAIL:**
-- Failures listed with severity
-- You decide: rework (auto-dispatches the supervisor in the same session after `y/n` confirmation — no need to run `/start-task` manually), create follow-up bead, or override and merge anyway
-- On rework, non-scope findings (`[MINOR]`, `[EXTRA]`, `[RISK]`, unlogged deviations) are tracked as separate beads in the parent epic before dispatch
-
-**After any verdict — Track QA Findings:**
-- All non-positive findings (`[EXTRA]`, `[DEVIATES]`, `[RISK]`, `[MINOR]`, unlogged deviations) that won't be addressed in the current cycle are extracted from the QA comment
-- Fernando (beads-owner) checks each finding against existing open tasks to avoid duplicates — if already covered, he links back with a comment and `discovered-from` dependency instead of creating a new issue
-- Unmatched findings get a new issue under the **parent epic** of the validated task with `finding:{type}` label, `discovered-from` dependency, and priority mapped from type (P3/P2/P1). Standalone tasks (no parent epic) fall back to a "Review Findings" epic
-
----
-
-### Handling External Review Feedback (CodeRabbit, Copilot, etc.)
-
-If you use external review services (CodeRabbit, GitHub Copilot, SonarQube, etc.) that leave comments on your PRs, the pipeline handles this naturally — no special skill needed.
-
-**The flow:**
-1. Your task passes the internal pipeline (`/review-task` → `/qa-task`)
-2. You create a PR from the branch
-3. The external service runs and leaves comments on the PR
-4. You read the comments and filter what's relevant
-5. You ask the orchestrator to apply the corrections:
-
-```
-"The CodeRabbit review on PR #42 for bead bd-001.2 flagged:
-  1. Missing error handling in parseConfig()
-  2. Variable should be const instead of let
-Can you fix these?"
-```
-
-The orchestrator reads the bead, resolves the correct supervisor, and dispatches with the external feedback as context.
-
-**Why no dedicated skill?** External review feedback varies widely in quality and relevance. The human filter is valuable here — you decide what's worth fixing, what's noise, and what's a follow-up task. The orchestrator (this Claude Code session) already has everything needed to dispatch corrections.
-
----
-
-### Adding a New Supervisor (Monorepo Scenario)
-
-When you add a new technology to your project after the initial setup — for example, a new Rust service in a monorepo that previously only had Node.js — the needed supervisor won't exist yet.
-
-**Scenario:** You run `/start-task` and the `assignee: rust-supervisor` field points to an agent that doesn't exist. The skill warns you and suggests creating one.
-
-```
-/add-supervisor rust
-```
-
-**What happens:**
-1. Checks if a supervisor already exists for this technology (e.g., `rust-supervisor.md` in `.claude/agents/`)
-2. If not, dispatches Daphne (Discovery) in **on-demand mode** — she skips the full codebase scan and creates only the requested supervisor
-3. The supervisor is fetched from the external directory, filtered, injected with the beads workflow, and written to `.claude/agents/`
-4. CLAUDE.md Supervisors section is updated
-
-**After creation:**
-```
-/start-task bd-001.2
-```
-Now the `assignee: rust-supervisor` routing resolves correctly.
-
-**Supported technologies:** Node.js, Python, Go, Rust, React, Vue, Svelte, Angular, Docker/CI/Terraform, Flutter, iOS, Android, Blockchain/Web3, ML/AI. If your technology isn't in the list, `/add-supervisor` will attempt to create one — Discovery handles the mapping.
-
----
-
-### Creating Individual Issues Without Epics
-
-Sometimes you need to create a single, well-defined issue without the full epic structure — a bug fix, a small improvement, or a standalone task.
-
-```
-/create-bead-issues
-```
-
-Fernando (beads-owner) creates the issue with:
-- Description of what needs to be done
-- Acceptance criteria
-- The `--assignee` set to the implementation supervisor
-- The `--spec-id` pointing to the main PRD and `--external-ref` for other references
-- Priority and any relevant labels
-
-This is useful when you already know exactly what the task is and don't need architectural decomposition.
-
----
-
-### Migrating Existing Beads After Plugin Updates
-
-When field conventions change (like moving supervisor routing from notes to assignee), existing beads in active projects need updating. The migrate skill handles this in bulk.
-
-```
-/migrate-beads
-```
-
-**What happens:**
-1. **Discover** — Fetches all open, in-progress, and in-review beads
-2. **Analyze** — Checks each bead against migration rules (e.g., supervisor still in notes instead of assignee, references in notes instead of spec-id/external-ref)
-3. **Preview** — Shows a dry run of all proposed changes per bead
-4. **Apply** — Updates beads with `bd update` after user confirmation
-
-Rules are idempotent — beads that already match current conventions are skipped. When future field conventions change, new rules are added to the skill and old ones naturally become no-ops.
-
----
-
-### Updating the Plugin
-
-When a new version of mister-anderson is available, the session-start hook notifies you:
-
-```
-⬆️  mister-anderson update available: 0.0.5 → 0.0.6
-   Run /update-plugin to update.
-```
-
-To update:
-```
-/update-plugin
-```
-
-**What happens:**
-1. **Version check** — Compares your installed version (`.claude/.mister-anderson-version`) with the latest from the plugin source
-2. **Legacy detection** — Checks for local copies of skills, core agents, and hooks from older versions
-3. **User confirmation** — You approve before anything is changed
-4. **Cleanup** — Removes legacy local copies that are now provided by the plugin system
-5. **Verify** — Confirms dynamic supervisors are intact and no duplicates remain
-
-**What the plugin provides automatically** (no local copy needed):
-- Skills — all workflow commands
-- 7 core agents (architect, product-manager, research, discovery, code-reviewer, qa-gate, beads-owner)
-- Hook scripts (session-start, discipline injection)
-
-**What stays local** (never touched):
-- `CLAUDE.md`, `AGENTS.md`, `BEADS-WORKFLOW.md` — your project-specific configs
-- Dynamic supervisors — `*-supervisor.md` files created by Discovery for your tech stack
-- `.beads/` database — your task history
-- `.claude/settings.json` — your project settings
-
-**After updating**, if the new version includes changes to supervisor templates, you're offered the option to re-run Discovery to refresh dynamic supervisors without deleting existing ones.
-
-#### Upgrading from pre-0.1.0
-
-If your project was set up with mister-anderson **< 0.1.0**, you likely have local copies of skills, core agents, and hooks that are now provided by the plugin system. Running `/update-plugin` will detect these legacy copies and offer to clean them up.
-
-> **What about CLAUDE.md and AGENTS.md?** These files contain project-specific content and are never touched by `/update-plugin`. If a new plugin version adds sections to the templates, check the [changelog](https://github.com/websublime/mister-anderson/releases) and add them manually if needed.
-
----
-
-### The Complete Comment Trail
-
-Every bead accumulates a structured history that any agent or human can read to reconstruct full context:
-
-```
-INVESTIGATION: (Sherlock)    -- What was found in the codebase before implementation
-DECISION:      (supervisor)  -- Non-trivial implementation choices and their reasoning
-DEVIATION:     (supervisor)  -- Where implementation differs from spec and why
-COMPLETED:     (supervisor)  -- What was implemented, files changed, decisions made
-REVIEW:        (Linus)       -- Findings with severities and overall verdict
-QA:            (Quinn)       -- Spec conformity, tests, build, lint, final verdict
-```
-
-This trail survives session restarts and context compaction. When `/review-task` re-dispatches the supervisor after a NEEDS-REWORK (or when you resume manually with `/start-task`), the supervisor reads all previous comments via Rule 0 and has full history.
-
-**To inspect a bead's trail at any time:**
-```bash
-bd comments bd-001.2
-```
-
----
-
-### Merging When Satisfied
-
-mister-anderson never merges for you. After a task passes QA validation (`qa-passed` label):
-
-1. The implementation branch is pushed to remote
-2. Create a PR from the branch (or use your normal merge process)
-3. Review the PR yourself — the bead comments give you full traceability
-4. Merge when you're satisfied
-5. Close the bead: `bd close bd-001.2`
-
-The principle: **you decide when it's ready, not the AI.**
+**Q: Who merges?**
+A: You do. mister-anderson never merges. After QA PASS, you create a PR, review it yourself, and merge when satisfied.
 
 ---
 
 ## Beads Compatibility
 
-This plugin is tested with **beads >= 0.60** (Dolt backend). Key differences from earlier versions:
+This plugin is tested with **beads >= 0.60** (Dolt backend).
 
-| Command | Old (beads 0.4) | Current (beads 0.60+) |
-|---------|-----------------|----------------------|
-| Init | `bd init --branch beads-sync` | `bd init` |
-| Add comment | `bd comment {ID} "text"` | `bd comments add {ID} "text"` |
-| Add label | `bd label {ID} {label}` | `bd label add {ID} {label}` |
-| Remove label | `bd label {ID} --remove {label}` | `bd label remove {ID} {label}` |
-| Sync | `bd sync` (removed) | `bd dolt push` / `bd dolt pull` |
-| Onboard | `bd onboard` (deprecated) | `bd prime` |
-| Storage | SQLite + JSONL auto-sync | Dolt (MySQL protocol) |
+| Command | Current (beads 0.60+) |
+|---------|-----------------------|
+| Init | `bd init` |
+| Add comment | `bd comments add {ID} "text"` |
+| Add label | `bd label add {ID} {label}` |
+| Remove label | `bd label remove {ID} {label}` |
+| Sync | `bd dolt push` / `bd dolt pull` |
+| Storage | Dolt (MySQL protocol) |
 
 ---
 
