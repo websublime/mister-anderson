@@ -41,7 +41,7 @@ if [[ -f "$VERSION_FILE" ]]; then
 
   if [[ -n "$REMOTE_VERSION" && "$REMOTE_VERSION" != "$LOCAL_VERSION" ]]; then
     echo "⬆️  mister-anderson update available: $LOCAL_VERSION → $REMOTE_VERSION"
-    echo "   Run /update-plugin to update."
+    echo "   Run /update to update."
     echo ""
   fi
 fi
