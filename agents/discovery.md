@@ -217,7 +217,7 @@ tools: *
 [From external agent - what this supervisor handles]
 
 **You escalate:**
-[From external agent or standard: other supervisors, architect, detective]
+[From external agent or standard: other supervisors, Ada (architect), Sherlock (research)]
 
 ---
 

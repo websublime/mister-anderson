@@ -81,5 +81,9 @@ Agent(
 </on-complete>
 
 <on-next>
-Recommend proceeding with `/investigate` to begin implementation. Use `bd ready` to see available work.
+Stage 2 complete. Recommend proceeding to Stage 3:
+  Guided:  `/implementation {NN}`  — walks through investigate → do → review → quality per task
+  Direct:  `/investigate`          — jump straight to investigating a task
+
+Use `bd ready` to see available work.
 </on-next>

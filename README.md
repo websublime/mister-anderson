@@ -408,12 +408,12 @@ Stage 3 orchestrator. Shows task progress, picks a task, and routes through inve
 Meta-orchestrator across all stages. Shows full project state, suggests the next step, and routes to stage orchestrators or individual skills.
 
 ```
-/workflow           # full state display + next suggestion
-/workflow 1         # delegate to /product
-/workflow 2         # delegate to /specification (asks phase NN)
-/workflow 3         # delegate to /implementation (asks phase NN)
-/workflow next      # determine + dispatch next pending step
-/workflow spec      # jump to /spec with prerequisite warnings
+/workflow                  # full state display + next suggestion
+/workflow product          # delegate to /product
+/workflow specification 01 # delegate to /specification for Phase 01
+/workflow implementation   # delegate to /implementation (asks phase NN)
+/workflow next             # determine + dispatch next pending step
+/workflow spec             # jump to /spec with prerequisite warnings
 ```
 
 When suggesting the next step, `/workflow` presents both options:
@@ -479,7 +479,7 @@ Need one that doesn't exist? Run `/add-supervisor {tech}`.
 | Category | Writes code? | Writes docs? | Creates beads? | Discipline hook? |
 |----------|:----------:|:----------:|:------------:|:--------------:|
 | **Document advisors** (Grace, Ada) | No | Yes | No | No |
-| **Investigators** (Smith, Sherlock) | No | Yes (research docs) | No | No |
+| **Investigators** (Smith, Sherlock) | No | Smith: Yes (research docs), Sherlock: No (bead comments only) | No | No |
 | **Quality gates** (Linus, Quinn) | No | No | No | No |
 | **Task creator** (Fernando) | No | No | Yes | No |
 | **Factory** (Daphne) | Agent files only | No | No | No |
@@ -493,11 +493,12 @@ The `-supervisor` suffix is the trigger — the PreToolUse hook injects engineer
 
 ### Supervisor Rules
 
-All implementation supervisors follow 6 mandatory rules, auto-injected by the discipline hook:
+All implementation supervisors follow 8 mandatory rules, auto-injected by the discipline hook:
 
 | Rule | Principle |
 |------|-----------|
-| **Rule 0** | Follow instructions exactly — no unilateral decisions. Read bead comments first |
+| **Rule 0** | Follow instructions exactly — no unilateral decisions |
+| **Rule 0.1** | Read the bead first — comments contain investigation findings and dispatch context |
 | **Rule 1** | Look at actual data before coding against it |
 | **Rule 2** | Test functionally — close the loop |
 | **Rule 3** | Use available tools to verify |
@@ -741,7 +742,7 @@ mister-anderson/
 | product | `/product` | Stage 1 guided flow |
 | specification | `/specification [phase]` | Stage 2 guided flow |
 | implementation | `/implementation [phase\|bead-id]` | Stage 3 guided flow |
-| workflow | `/workflow [1\|2\|3\|next\|skill]` | Meta-orchestrator, project state |
+| workflow | `/workflow [product\|specification\|implementation\|next\|skill]` | Meta-orchestrator, project state |
 
 ### Infrastructure
 

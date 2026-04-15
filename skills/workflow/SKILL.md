@@ -12,7 +12,7 @@ Interactive pipeline guide. Shows current project state, suggests the next step,
 
 <on-init>
 If the user provides $ARGUMENTS, parse them for:
-- A stage number (e.g., `1`, `2`, `3`) → delegate to the stage orchestrator
+- A stage name (`product`, `specification`, `implementation`) → delegate to the stage orchestrator
 - `next` → advance to the next pending step
 - A skill name (e.g., `spec`, `research`) → jump directly to that step with prerequisite warnings
 - `status` → show full state only, no action
@@ -85,11 +85,11 @@ Next step: Research (Phase 01)
 </on-step>
 
 <on-step name="stage_jump">
-When the user provides a stage number, delegate to the corresponding orchestrator:
+When the user provides a stage name, delegate to the corresponding orchestrator:
 
-- `1` → `Skill(skill="product")`
-- `2` → `Skill(skill="specification")` — ask for phase number if not provided
-- `3` → `Skill(skill="implementation")` — ask for phase number if not provided
+- `product` → `Skill(skill="product")`
+- `specification` → `Skill(skill="specification")` — ask for phase number if not provided
+- `implementation` → `Skill(skill="implementation")` — ask for phase number if not provided
 </on-step>
 
 <on-step name="skill_jump">

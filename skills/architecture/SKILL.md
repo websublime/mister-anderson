@@ -55,5 +55,7 @@ Inform the user they can continue iterating with Ada.
 </on-complete>
 
 <on-next>
-Stage 1 complete. Recommend proceeding to Stage 2 with `/plan` to define the first phase.
+Stage 1 complete. Recommend proceeding to Stage 2:
+  Guided:  `/specification 01`  — walks through plan → research → spec → tasks
+  Direct:  `/plan`              — jump straight to planning
 </on-next>
