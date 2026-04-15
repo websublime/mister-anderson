@@ -15,6 +15,7 @@
     "./agents/product-manager.md",
     "./agents/architect.md",
     "./agents/research.md",
+    "./agents/investigator.md",
     "./agents/code-reviewer.md",
     "./agents/qa-gate.md",
     "./agents/beads-owner.md",
