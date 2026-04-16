@@ -107,7 +107,79 @@ echo "{NEW_VERSION}" > ./.claude/.mister-anderson-version
 
 ---
 
-### Step 3: Post-Update Verification
+### Step 3: Migrate Supervisors for New Plugin Features
+
+Newer plugin versions may introduce frontmatter or workflow contracts that existing supervisors don't have. Supervisors are local to the project (never removed by cleanup) so they need in-place migration.
+
+**Current migrations (as of plugin version introducing state-dimension enforcement):**
+
+1. **`hooks:` block missing from supervisor frontmatter** — required for `SubagentStop` enforcement.
+2. **`bd set-state impl=done` step missing from embedded `<on-completion>`** — required so the agent closes the enforcement state before the hook checks it.
+
+#### Detect supervisors needing migration
+
+```bash
+SUPERVISORS=$(ls .claude/agents/*-supervisor.md 2>/dev/null)
+[[ -z "$SUPERVISORS" ]] && echo "No supervisors to migrate" || {
+  echo "Supervisors found:"
+  for f in $SUPERVISORS; do
+    NEEDS_HOOKS=$(grep -q "verify-state.sh" "$f" && echo "no" || echo "yes")
+    NEEDS_STATE=$(grep -q "set-state.*impl=done" "$f" && echo "no" || echo "yes")
+    echo "  $f — hooks: $NEEDS_HOOKS, set-state: $NEEDS_STATE"
+  done
+}
+```
+
+#### Patch each supervisor that needs migration
+
+**Do not attempt this with `sed`/`awk`.** Per-supervisor layout varies (different tech stacks, different specialty content injected by discovery). Use `Read` + `Edit` tools so you can see the exact structure before modifying.
+
+For each supervisor file where `NEEDS_HOOKS=yes` or `NEEDS_STATE=yes`:
+
+**(a) Frontmatter `hooks:` block** — if `NEEDS_HOOKS=yes`:
+
+Read the file. Locate the YAML frontmatter (between the opening `---` and closing `---`). Immediately before the closing `---`, insert:
+
+```yaml
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          command: ${CLAUDE_PLUGIN_ROOT}/hooks/stamp-pending.sh
+  Stop:
+    - hooks:
+        - type: command
+          command: ${CLAUDE_PLUGIN_ROOT}/hooks/verify-state.sh
+```
+
+Preserve all existing frontmatter fields (`name`, `description`, `model`, `tools`, etc.) exactly.
+
+**(b) Embedded `<on-completion>` set-state step** — if `NEEDS_STATE=yes`:
+
+Read the file. Locate the `<on-completion>` section (inside the embedded beads-workflow block). Find the step that calls `bd comments add {BEAD_ID} "COMPLETED:` and ends with `"`. Immediately after that step's code block closes, insert a new numbered step:
+
+```markdown
+3. **Record implementation state (MANDATORY — enforced by SubagentStop hook):**
+   ```bash
+   bd set-state {BEAD_ID} impl=done --reason "Implementation completed on branch {branch-name}"
+   ```
+```
+
+Renumber subsequent steps accordingly (Push to remote → 4, Clean up labels → 5, etc.). The numbering must be sequential because the workflow is read step-by-step.
+
+#### Post-patch verification
+
+Re-run the detection block. Every supervisor must now show `hooks: no, set-state: no` (both patches applied).
+
+**If any supervisor still fails**, do NOT force-push a broken state. Report the file and ask the user whether to:
+- Retry the patch (may have had a parse issue)
+- Regenerate that supervisor via `/add-supervisor <tech>` (Step 5 flow)
+- Skip (user will patch manually)
+
+---
+
+### Step 4: Post-Update Verification
 
 ```bash
 ls .claude/agents/*-supervisor.md 2>/dev/null | grep -v "^$"
@@ -117,7 +189,7 @@ ls .claude/hooks/ 2>/dev/null && echo "WARNING: Local hooks still exist" || echo
 
 ---
 
-### Step 4: Optional — Re-run Discovery
+### Step 5: Optional — Re-run Discovery
 
 Offer to refresh dynamic supervisors. If user agrees:
 
@@ -137,12 +209,15 @@ Report result:
 ```
 mister-anderson updated to {NEW_VERSION}
 
-Cleaned up: {N} local skills, {N} local hooks, {N} core agents
-Preserved: {N} dynamic supervisors, CLAUDE.md, AGENTS.md
+Cleaned up:  {N} local skills, {N} local hooks, {N} core agents
+Migrated:    {N} supervisors patched (hooks block / impl=done step)
+Preserved:   {N} dynamic supervisors (specialty content intact), CLAUDE.md, AGENTS.md
 
 Skills, core agents, and hooks are now provided by the plugin system.
-Dynamic supervisors remain in .claude/agents/.
+Dynamic supervisors remain in .claude/agents/ with enforcement hooks attached.
 ```
+
+If any supervisor migration was skipped, list it explicitly so the user knows enforcement is not active for that supervisor.
 </on-complete>
 
 <on-next>

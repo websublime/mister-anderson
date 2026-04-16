@@ -644,11 +644,13 @@ Update the plugin and clean up legacy local copies.
 1. Compares installed version with latest remote version
 2. Detects legacy local copies (skills, hooks, core agents from older versions)
 3. Removes legacy copies after user confirmation — dynamic supervisors are never touched
-4. Optionally re-runs Discovery to refresh supervisor templates
-5. Reminds to update the Claude Code plugin cache and restart
+4. **Migrates existing supervisors** for new plugin contracts (e.g. injects the enforcement `hooks:` block into supervisor frontmatter, adds `bd set-state impl=done` to the embedded completion workflow)
+5. Optionally re-runs Discovery to refresh supervisor specialty content
+6. Reminds to update the Claude Code plugin cache and restart
 
 **What the plugin provides** (no local copy needed): skills, core agents, hooks.
-**What stays local** (never touched): CLAUDE.md, AGENTS.md, dynamic supervisors, .beads/, settings.
+**What stays local** (patched in place, specialty preserved): dynamic supervisors in `.claude/agents/`.
+**What stays local** (never touched): CLAUDE.md, AGENTS.md, `.beads/`, settings.
 
 ### /add-supervisor
 
