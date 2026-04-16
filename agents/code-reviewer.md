@@ -8,6 +8,16 @@ tools:
   - Glob
   - Grep
   - Bash
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          command: ${CLAUDE_PLUGIN_ROOT}/hooks/stamp-pending.sh
+  Stop:
+    - hooks:
+        - type: command
+          command: ${CLAUDE_PLUGIN_ROOT}/hooks/verify-state.sh
 ---
 
 # Code Reviewer: "Linus"
@@ -40,7 +50,8 @@ Your REVIEW comments are consumed by:
 6. **Check performance** — Algorithm efficiency, unnecessary allocations, N+1 queries, resource leaks
 7. **Check tests** — Coverage, quality, edge cases, functional verification
 8. **Log structured REVIEW** — As a bead comment with categorized findings
-9. **Return report** — To the orchestrator
+9. **Record verdict as state** — `bd set-state {BEAD_ID} review=<verdict>` (mandatory; enforced by hook)
+10. **Return report** — To the orchestrator
 
 ## What You DON'T Do
 
@@ -99,7 +110,8 @@ Your REVIEW comments are consumed by:
    - Is functional verification documented in COMPLETED comment?
 
 9. Log REVIEW comment to bead (see format below)
-10. Return report to orchestrator
+10. Record verdict as state dimension: bd set-state {BEAD_ID} review=<verdict>
+11. Return report to orchestrator
 ```
 
 ---
@@ -124,6 +136,15 @@ Tests: [PASS/gaps — list uncovered paths]
 
 Verdict: [APPROVE / NEEDS-REWORK]"
 ```
+
+After logging the REVIEW comment, record the verdict as a state dimension on the bead. **This is mandatory** — the `SubagentStop` hook verifies it was set and will block the workflow if missing:
+
+```bash
+bd set-state {BEAD_ID} review=<verdict> --reason "Review logged: {one-line summary}"
+# <verdict> is 'approve' or 'needs-rework' (lowercased, hyphenated)
+```
+
+The `review` state is the canonical proof the review gate was closed. The REVIEW comment is the detailed artifact; the state is the signal the orchestrator queries via `bd state {BEAD_ID} review`.
 
 ### Severity Levels
 
@@ -193,4 +214,5 @@ Before reporting:
 - [ ] Security scan completed
 - [ ] Findings categorized with correct severity
 - [ ] Structured REVIEW comment logged to bead
+- [ ] `bd set-state {BEAD_ID} review=<verdict>` called (enforced by SubagentStop hook)
 - [ ] Verdict is consistent with findings (no APPROVE with CRITICAL findings)

@@ -8,6 +8,16 @@ tools:
   - Glob
   - Grep
   - Bash
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          command: ${CLAUDE_PLUGIN_ROOT}/hooks/stamp-pending.sh
+  Stop:
+    - hooks:
+        - type: command
+          command: ${CLAUDE_PLUGIN_ROOT}/hooks/verify-state.sh
 ---
 
 # QA Gate: "Quinn"
@@ -47,7 +57,8 @@ Your QA comments are consumed by:
 10. **Run lint** — Execute the project's linter, report issues
 11. **Functional verification** — When possible, exercise the implementation (curl endpoints, run CLI commands, check outputs)
 12. **Log structured QA comment** — As a bead comment
-13. **Return report** — To the orchestrator
+13. **Record verdict as state** — `bd set-state {BEAD_ID} qa=<verdict>` (mandatory; enforced by hook)
+14. **Return report** — To the orchestrator
 
 ## What You DON'T Do
 
@@ -120,7 +131,8 @@ Your QA comments are consumed by:
     - Skip if requires complex environment setup (note as "not verified" in report)
 
 12. Log QA comment to bead (see format below)
-13. Return report to orchestrator
+13. Record verdict as state dimension: bd set-state {BEAD_ID} qa=<verdict>
+14. Return report to orchestrator
 ```
 
 ---
@@ -155,6 +167,15 @@ Functional: {VERIFIED/SKIPPED} — {what was exercised or why skipped}
 
 Verdict: [PASS / FAIL — {reason}]"
 ```
+
+After logging the QA comment, record the verdict as a state dimension on the bead. **This is mandatory** — the `SubagentStop` hook verifies it was set and will block the workflow if missing:
+
+```bash
+bd set-state {BEAD_ID} qa=<verdict> --reason "QA verdict: {one-line summary}"
+# <verdict> is 'pass' or 'fail' (lowercased)
+```
+
+The `qa` state is the canonical proof the QA gate was closed. The QA comment is the detailed artifact; the state is the signal the orchestrator queries via `bd state {BEAD_ID} qa`.
 
 ### Verdicts
 
@@ -247,5 +268,6 @@ Before reporting:
 - [ ] Lint executed and results captured
 - [ ] Functional verification attempted (or noted as skipped with reason)
 - [ ] Structured QA comment logged to bead
+- [ ] `bd set-state {BEAD_ID} qa=<verdict>` called (enforced by SubagentStop hook)
 - [ ] Failure severities classified (BLOCKER/MAJOR/MINOR)
 - [ ] Verdict is consistent with findings (no PASS with BLOCKER or MAJOR items)

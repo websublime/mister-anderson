@@ -109,27 +109,33 @@ WARNING: ALL steps below are MANDATORY. Skipping any step breaks the review pipe
    Tests: [what was tested and how — functional verification, unit tests, etc.]"
    ```
 
-3. **Push to remote:**
+3. **Record implementation state (MANDATORY — enforced by SubagentStop hook):**
+   ```bash
+   bd set-state {BEAD_ID} impl=done --reason "Implementation completed on branch {branch-name}"
+   ```
+   The `impl` state is the canonical proof that implementation finished. The COMPLETED comment is the detailed artifact; the state is the signal the orchestrator queries via `bd state {BEAD_ID} impl`. **If you skip this, the hook will block and the orchestrator will see an enforcement failure.**
+
+4. **Push to remote:**
    ```bash
    git push origin $(git branch --show-current)
    ```
 
-4. **Clean up stale labels (if rework cycle):**
+5. **Clean up stale labels (if rework cycle):**
    ```bash
    bd label remove {BEAD_ID} needs-rework 2>/dev/null || true
    ```
 
-5. **Add review label:**
+6. **Add review label:**
    ```bash
    bd label add {BEAD_ID} needs-review
    ```
 
-6. **Mark status:**
+7. **Mark status:**
    ```bash
    bd update {BEAD_ID} --status in-review
    ```
 
-7. **Return completion report:**
+8. **Return completion report:**
    ```
    BEAD {BEAD_ID} COMPLETE
    Branch: [branch name]

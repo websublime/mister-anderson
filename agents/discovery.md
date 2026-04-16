@@ -174,6 +174,9 @@ For each section in external agent content:
 **CRITICAL: Always include `tools: *` in the frontmatter.**
 This grants supervisors access to ALL available tools including MCP tools and Skills.
 
+**CRITICAL: Always include the `hooks:` block below in supervisor frontmatter.**
+The PreToolUse + Stop hooks enforce that the supervisor sets `impl=done` state on the bead before finishing. Without this block, the orchestrator has no reliable signal that implementation completed.
+
 ```markdown
 ---
 name: [agent-name]
@@ -181,6 +184,16 @@ description: [brief - one line]
 model: opus
 effort: high
 tools: *
+hooks:
+  PreToolUse:
+    - matcher: Bash
+      hooks:
+        - type: command
+          command: ${CLAUDE_PLUGIN_ROOT}/hooks/stamp-pending.sh
+  Stop:
+    - hooks:
+        - type: command
+          command: ${CLAUDE_PLUGIN_ROOT}/hooks/verify-state.sh
 ---
 
 # [Role]: "[Name]"

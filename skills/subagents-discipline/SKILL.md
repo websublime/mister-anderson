@@ -165,7 +165,13 @@ Deviations: [count of DEVIATION comments logged, or 'none — implemented as spe
 Tests: [what was tested and how — functional verification, unit tests, etc.]"
 ```
 
-This is NOT optional. Every implementation task must have a COMPLETED comment before marking in-review.
+Then record the canonical implementation state (**enforced by the SubagentStop hook — skipping this blocks the workflow**):
+
+```bash
+bd set-state {BEAD_ID} impl=done --reason "Implementation completed on branch {branch-name}"
+```
+
+Neither step is optional. Every implementation task must have both the COMPLETED comment and `impl=done` state before marking in-review.
 
 ---
 

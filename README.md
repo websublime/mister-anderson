@@ -534,7 +534,7 @@ All implementation supervisors follow 8 mandatory rules, auto-injected by the di
 | **Rule 2** | Test functionally — close the loop |
 | **Rule 3** | Use available tools to verify |
 | **Rule 4** | Log decisions (`DECISION:`) and deviations from spec (`DEVIATION:`) as bead comments |
-| **Rule 5** | Log completion summary (`COMPLETED:`) — mandatory before marking in-review |
+| **Rule 5** | Log `COMPLETED:` comment and record `impl=done` state — enforced by SubagentStop hook |
 | **Rule 6** | Never close beads — your job ends at `in-review` |
 
 ### Comment Trail
@@ -555,6 +555,23 @@ This trail survives session restarts and context compaction. Any agent or human 
 ```bash
 bd comments bd-001.2
 ```
+
+### State Dimensions & Enforcement
+
+Alongside the comment trail, each gate records a typed **state dimension** on the bead that serves as the canonical proof the gate closed. The comment is the detailed artifact (human-readable); the state is the typed signal (machine-readable, no text parsing). The orchestrator queries state, not comments, to route next steps.
+
+| Dimension | Set by | Values |
+|-----------|--------|--------|
+| `impl`    | supervisors (`*-supervisor`) | `done` |
+| `review`  | `code-reviewer` (Linus)      | `approve` / `needs-rework` |
+| `qa`      | `qa-gate` (Quinn)            | `pass` / `fail` |
+
+```bash
+bd set-state bd-042 review=approve --reason "Review logged"
+bd state bd-042 review   # → approve
+```
+
+**Enforcement.** Each enforced agent has `hooks:` in its frontmatter. A paired `PreToolUse`/`Stop` pair (see [Hooks](#hooks)) captures the bead ID from the first `bd show` call and, on exit, verifies the state dimension was set. If the agent finishes without calling `bd set-state`, the `Stop` hook exits with code 2 and a structured enforcement-failure message for the orchestrator — blocking the workflow rather than silently completing a gate that was never closed.
 
 ### Findings Tracking
 
@@ -650,10 +667,25 @@ Create a new supervisor for a technology not yet covered.
 
 ## Hooks
 
+Two hook tiers run in the plugin: **global hooks** declared in `hooks/hooks.json` (apply to every session) and **per-agent hooks** declared in the `hooks:` frontmatter of enforced agents (scoped to that agent's lifecycle, auto-attach only when the agent runs as a subagent).
+
+### Global (hooks.json)
+
 | Hook | Trigger | Purpose |
 |------|---------|---------|
-| `inject-discipline-reminder.sh` | `PreToolUse` (Task tool) | Injects discipline skill when dispatching `*-supervisor` agents |
+| `inject-discipline-reminder.sh` | `PreToolUse` (Agent tool, `*-supervisor` matcher) | Reminds supervisors to invoke the discipline skill at start |
 | `session-start.sh` | `SessionStart` | Shows task dashboard: in-progress, ready, blocked, stale, labeled beads. Checks for plugin updates |
+
+### Per-agent (frontmatter `hooks:`)
+
+Attached to `code-reviewer`, `qa-gate`, and every `*-supervisor` (injected by `discovery.md` into each generated supervisor):
+
+| Hook | Trigger | Purpose |
+|------|---------|---------|
+| `stamp-pending.sh` | `PreToolUse` (Bash) | On the subagent's first `bd show <id>`, captures the bead ID into `bd kv` keyed by the subagent's `agent_id`. Idempotent |
+| `verify-state.sh` | `Stop` (auto-converted to `SubagentStop`) | Reads the pending entry, queries `bd state <bead> <dim>`. Missing state → `exit 2` with enforcement-failure message. Dimension is `impl` / `review` / `qa` per agent type |
+
+See [State Dimensions & Enforcement](#state-dimensions--enforcement) for the full mechanism.
 
 ---
 
@@ -675,9 +707,11 @@ mister-anderson/
 |-- docs/
 |   +-- diagrams/                # Excalidraw sources + PNG exports
 |-- hooks/
-|   |-- hooks.json               # Hook configuration
-|   |-- inject-discipline-reminder.sh
-|   +-- session-start.sh
+|   |-- hooks.json               # Global hook configuration
+|   |-- inject-discipline-reminder.sh  # Global: supervisor dispatch reminder
+|   |-- session-start.sh               # Global: task dashboard on session start
+|   |-- stamp-pending.sh               # Per-agent: capture bead ID into bd kv
+|   +-- verify-state.sh                # Per-agent: enforce state dimension on Stop
 |-- skills/
 |   |-- manifesto/               # Stage 1: product vision
 |   |-- requirements/            # Stage 1: PRD creation (Grace)
