@@ -29,28 +29,59 @@ This applies to:
 
 ---
 
-## Rule 0.1: Read the Bead First
+## Rule 1: Read Before You Implement
 
-Before implementing anything, **read the bead comments** for context:
+Before writing any code, build your full picture by reading three layers — **context**, **contract**, and **code** — in order. Each layer may or may not exist. Use what's available.
+
+### Layer 1: Context (bead comments)
 
 ```bash
 bd show {BEAD_ID}
 bd comments {BEAD_ID}
 ```
 
-The orchestrator's dispatch prompt is automatically logged as a DISPATCH comment on the bead. This contains:
-- The investigation findings
-- Root cause analysis (file, function, line)
-- Related files that may need changes
-- Gotchas and edge cases
+Comments may contain investigation findings (`INVESTIGATION:`), dispatch context (`DISPATCH:`), root cause analysis, affected files, gotchas. **Use this context** — don't re-investigate what Sherlock already traced.
 
-**Use this context.** Don't re-investigate. The comments contain everything you need to implement confidently.
+If no comments exist, you have no prior investigation. Proceed to the next layers — they become more important.
 
-If no dispatch or context comments exist, ask the orchestrator to provide context before proceeding.
+### Layer 2: Contract (spec / design doc)
+
+The spec or design doc defines **how** to implement — field names, types, interfaces, architecture decisions. This is your implementation contract.
+
+**For epic children** (BEAD_ID contains a dot, e.g., BD-001.2):
+```bash
+bd show {EPIC_ID} --json | jq -r '.[0].design // empty'
+```
+If a design doc path exists, read it. Match it exactly — same field names, same types, same shapes.
+
+**For any bead**: check the `design` and `notes` fields in `bd show {BEAD_ID} --json` for spec references.
+
+If a spec exists, it takes precedence over your own judgement. Follow it. If you believe the spec is wrong, log a `DEVIATION:` comment explaining why — don't silently diverge.
+
+If no spec or design doc exists, proceed to Layer 3.
+
+### Layer 3: Code (confrontation)
+
+When there is no spec defining the HOW, **the existing code is your contract**. Before implementing:
+
+1. Read the files you will modify (already identified in Layer 1, or find them yourself)
+2. Understand the patterns, conventions, and interfaces in the surrounding code
+3. Implement following what you observed — same patterns, same style, same abstractions
+
+This is not re-investigating. The investigation found WHERE and WHAT. Code confrontation tells you HOW the codebase expects you to work.
+
+### What you have determines your approach
+
+| Context (comments) | Contract (spec) | Code | Approach |
+|---|---|---|---|
+| Yes | Yes | — | Spec is the contract. Comments guide you to the right files. |
+| Yes | No | Read | Follow existing code patterns. Log `DECISION:` for non-obvious choices. |
+| No | Yes | — | Spec is the contract. Find entry points yourself. |
+| No | No | Read | Read the bead description and acceptance criteria — that's your minimal spec. Confront the code. Log `DECISION:` for every choice. |
 
 ---
 
-## Rule 1: Look Before You Code
+## Rule 2: Look Before You Code
 
 Before writing code that touches external data (API, database, file, config):
 
@@ -71,7 +102,7 @@ WITH looking first:
   Result: Works
 ```
 
-## Rule 2: Test Functionally (Close the Loop)
+## Rule 3: Test Functionally (Close the Loop)
 
 **Principle: Optimize for the fastest way to verify your work actually works.**
 
@@ -107,7 +138,7 @@ WITH looking first:
 Good: "Curled endpoint with invalid auth, got 401 as expected"
 Bad: "Wrote tests, they compile"
 
-## Rule 3: Use Your Tools
+## Rule 4: Use Your Tools
 
 Before claiming you can't fully test:
 
@@ -115,7 +146,7 @@ Before claiming you can't fully test:
 2. **If any tool can help verify the feature works**, use it
 3. **Be resourceful** - browser automation, database inspection, API testing tools
 
-## Rule 4: Log Decisions and Deviations (Mandatory when applicable)
+## Rule 5: Log Decisions and Deviations (Mandatory when applicable)
 
 During implementation, log every non-trivial decision and any deviation from the spec/design doc as bead comments. This creates a traceable decision trail that the QA agent and humans can review.
 
@@ -152,7 +183,7 @@ Examples:
 
 ---
 
-## Rule 5: Log Completion Summary (Mandatory)
+## Rule 6: Log Completion Summary (Mandatory)
 
 Before marking the bead as in-review, you MUST leave a structured completion comment summarizing what was done. This is consumed by the code-reviewer agent and the orchestrator to understand the scope of changes without reading every diff.
 
@@ -175,17 +206,7 @@ Neither step is optional. Every implementation task must have both the COMPLETED
 
 ---
 
-## For Epic Children
-
-If your BEAD_ID contains a dot (e.g., BD-001.2), you're implementing part of a larger feature:
-
-1. **Check for design doc**: `bd show {EPIC_ID} --json | jq -r '.[0].design'`
-2. **Read it if it exists** - this is your contract
-3. **Match it exactly** - same field names, same types, same shapes
-
----
-
-## Rule 6: Never Close Beads
+## Rule 7: Never Close Beads
 
 Your job ends at `in-review`. After pushing and marking the bead `in-review` with `needs-review` label, **stop**. Do NOT run `bd close`.
 

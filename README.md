@@ -529,13 +529,13 @@ All implementation supervisors follow 8 mandatory rules, auto-injected by the di
 | Rule | Principle |
 |------|-----------|
 | **Rule 0** | Follow instructions exactly — no unilateral decisions |
-| **Rule 0.1** | Read the bead first — comments contain investigation findings and dispatch context |
-| **Rule 1** | Look at actual data before coding against it |
-| **Rule 2** | Test functionally — close the loop |
-| **Rule 3** | Use available tools to verify |
-| **Rule 4** | Log decisions (`DECISION:`) and deviations from spec (`DEVIATION:`) as bead comments |
-| **Rule 5** | Log `COMPLETED:` comment and record `impl=done` state — enforced by SubagentStop hook |
-| **Rule 6** | Never close beads — your job ends at `in-review` |
+| **Rule 1** | Read before you implement — context (comments), contract (spec), code (confrontation) |
+| **Rule 2** | Look at actual data before coding against it |
+| **Rule 3** | Test functionally — close the loop |
+| **Rule 4** | Use available tools to verify |
+| **Rule 5** | Log decisions (`DECISION:`) and deviations from spec (`DEVIATION:`) as bead comments |
+| **Rule 6** | Log `COMPLETED:` comment and record `impl=done` state — enforced by SubagentStop hook |
+| **Rule 7** | Never close beads — your job ends at `in-review` |
 
 ### Comment Trail
 
