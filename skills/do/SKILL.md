@@ -99,8 +99,9 @@ git branch -a | grep {BEAD_ID}
 </on-execute>
 
 <on-complete>
-1. Confirm the supervisor was dispatched
-2. Show the branch name being used
+1. Confirm the supervisor completed
+2. Show the branch name used
+3. Show the PR URL if the supervisor created one (look for `PR:` in the completion report or bead comments)
 </on-complete>
 
 <on-next>
