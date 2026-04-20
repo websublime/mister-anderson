@@ -56,7 +56,11 @@ bd show {EPIC_ID} --json | jq -r '.[0].design // empty'
 ```
 If a design doc path exists, read it. Match it exactly — same field names, same types, same shapes.
 
-**For any bead**: check the `design` and `notes` fields in `bd show {BEAD_ID} --json` for spec references.
+**For any bead**: check these fields in `bd show {BEAD_ID} --json` for spec references:
+- `design` — one-line pointer to spec section (e.g., "See spec.md § Section 3")
+- `external-ref` — pipe-separated doc references (e.g., "SPEC §7.4 | PLAN task 06.03")
+- `spec-id` — PRD reference (e.g., "PRD 9.14")
+- `notes` — may contain additional context
 
 If a spec exists, it takes precedence over your own judgement. Follow it. If you believe the spec is wrong, log a `DEVIATION:` comment explaining why — don't silently diverge.
 
