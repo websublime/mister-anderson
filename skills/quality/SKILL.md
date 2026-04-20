@@ -93,11 +93,28 @@ After the QA agent completes:
 
 ### Step 4: Track QA Findings
 
-Extract actionable findings from the QA comment and create tracked issues.
+Extract actionable findings from the QA comment and apply the **severity threshold policy**:
 
-- **PASS:** all non-positive findings deferred — create issues
-- **FAIL + rework:** BLOCKER/MAJOR addressed by rework; track MINOR, EXTRA, RISK
-- **FAIL + follow-up/override:** track all non-positive findings
+| Severity | Action |
+|---|---|
+| **BLOCKER** | Addressed by rework (same bead) — never tracked separately |
+| **MAJOR** | Individual bead — justifies its own pipeline |
+| **MINOR** | Batched into a single "QA cleanup" bead per epic |
+| **EXTRA** | Comment on the epic — deferred backlog, not a bead |
+| **RISK** | Comment on the epic — deferred backlog, not a bead |
+
+**Filtering rules:**
+- **PASS:** track MAJORs as individual beads, batch MINORs into one bead, log EXTRA/RISK as epic comments
+- **FAIL + rework:** BLOCKER/MAJOR addressed by rework; batch MINORs, log EXTRA/RISK as comments
+- **FAIL + follow-up/override:** same as PASS policy
+- **If no MAJORs or MINORs exist:** log EXTRA/RISK as epic comments only — do NOT dispatch Fernando for bead creation
+
+**Log EXTRA/RISK as epic comments** (deferred backlog — not beads):
+```bash
+bd comments add {TARGET_EPIC_ID} "DEFERRED from QA of {BEAD_ID}:
+- [EXTRA] {description}
+- [RISK] {description}"
+```
 
 **Resolve the target epic** — findings go to the parent epic:
 ```bash
@@ -106,11 +123,11 @@ bd show {BEAD_ID} --json | python3 -c "import json,sys; d=json.load(sys.stdin); 
 - **If `parent` is not empty:** use it as `{TARGET_EPIC_ID}`
 - **ONLY if `parent` is empty:** fall back to a "Review Findings" epic
 
-Dispatch **beads-owner** using **exactly** these parameters — no more, no less:
+**Only dispatch Fernando if MAJORs or MINORs exist.** Use **exactly** these parameters — no more, no less:
 ```python
 Agent(
     subagent_type="beads-owner",
-    prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the validated task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{type}' (lowercase) for each. Include relevant context from QA report. Findings:\n\n{FINDINGS_LIST}"
+    prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the validated task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{type}' (lowercase) for each. Include relevant context from QA report. BATCHING RULE: Create individual beads for MAJOR findings only. Batch ALL MINOR findings into a single bead titled 'QA cleanup: {BEAD_ID}' with each item as a checklist in the description. Do NOT create beads for EXTRA or RISK — those are already logged as epic comments. Findings:\n\n{FINDINGS_LIST}"
 )
 ```
 **Do NOT add extra parameters** unless the user explicitly requests it.

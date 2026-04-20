@@ -86,10 +86,19 @@ After the code-reviewer completes:
 
 ### Step 4: Track Review Findings
 
-Extract actionable findings from the REVIEW comment and create tracked issues.
+Extract actionable findings from the REVIEW comment and apply the **severity threshold policy**:
 
-- **APPROVE:** all non-`[GOOD]` findings are deferred — create issues
-- **NEEDS-REWORK:** `[SUGGESTION]` findings are tracked (CRITICAL/WARNING addressed by rework)
+| Severity | Action |
+|---|---|
+| **CRITICAL** | Addressed by rework (same bead) — never tracked separately |
+| **WARNING** | Individual bead — justifies its own pipeline |
+| **SUGGESTION** | Batched into a single "Review cleanup" bead per epic — one bead for all suggestions |
+| **GOOD** | Not tracked — acknowledgement only |
+
+**Filtering rules:**
+- **APPROVE:** track WARNINGs as individual beads, batch SUGGESTIONs into one bead
+- **NEEDS-REWORK:** CRITICAL/WARNING addressed by rework; batch SUGGESTIONs into one bead
+- **If no WARNINGs or SUGGESTIONs exist:** skip tracking entirely — do NOT dispatch Fernando
 
 **Resolve the target epic** — findings go to the parent epic of the reviewed bead:
 ```bash
@@ -102,7 +111,7 @@ Dispatch **beads-owner** using **exactly** these parameters — no more, no less
 ```python
 Agent(
     subagent_type="beads-owner",
-    prompt="Create beads issues for the following review findings from BEAD {BEAD_ID} review. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the reviewed task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{severity}' (lowercase) for each. Include file path and line number. Findings:\n\n{FINDINGS_LIST}"
+    prompt="Create beads issues for the following review findings from BEAD {BEAD_ID} review. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the reviewed task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{severity}' (lowercase) for each. Include file path and line number. BATCHING RULE: Create individual beads for WARNING findings only. Batch ALL SUGGESTION findings into a single bead titled 'Review cleanup: {BEAD_ID}' with each suggestion as a checklist item in the description. Findings:\n\n{FINDINGS_LIST}"
 )
 ```
 **Do NOT add extra parameters** unless the user explicitly requests it.

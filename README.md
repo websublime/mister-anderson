@@ -548,7 +548,19 @@ DEVIATION:     (supervisor)  — where implementation differs from spec and why
 COMPLETED:     (supervisor)  — what was implemented, files changed, tests run
 REVIEW:        (Linus)       — code quality findings with severities and verdict
 QA:            (Quinn)       — spec conformity, tests, build, lint, final verdict
+DEFERRED:      (orchestrator) — EXTRA/RISK findings logged on epics as deferred backlog
 ```
+
+### Finding Severity Threshold
+
+Findings from review/QA are tracked based on severity to prevent task proliferation:
+
+| Severity | Action |
+|---|---|
+| CRITICAL / BLOCKER | Rework in same bead — never separate |
+| WARNING / MAJOR | Individual bead — justifies pipeline |
+| SUGGESTION / MINOR | Batched into single cleanup bead per epic |
+| EXTRA / RISK | Epic comment (deferred backlog) — not a bead |
 
 This trail survives session restarts and context compaction. Any agent or human can reconstruct full context:
 

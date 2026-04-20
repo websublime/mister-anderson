@@ -83,7 +83,18 @@ When dispatched by `/review` or `/quality` to track findings, follow this stream
 
    > **Be conservative:** only match when clearly the same scope. When in doubt, create a new issue — a rare duplicate is better than a lost finding.
 
-3. **For each unmatched finding, create an issue using this exact command pattern:**
+3. **Apply the batching rule from the dispatch prompt.**
+
+   The orchestrator's dispatch prompt specifies which findings are individual beads and which are batched. Follow it exactly. The general policy is:
+
+   | Finding type | Bead strategy |
+   |---|---|
+   | CRITICAL / BLOCKER | Never tracked — addressed by rework in the same bead |
+   | WARNING / MAJOR | Individual bead each |
+   | SUGGESTION / MINOR | Batched into a **single** bead (checklist in description) |
+   | EXTRA / RISK | Not your concern — already logged as epic comments by the orchestrator |
+
+   **For individual beads** (WARNING / MAJOR):
    ```bash
    bd create --title "{concise summary}" \
      --type chore \
@@ -91,19 +102,35 @@ When dispatched by `/review` or `/quality` to track findings, follow this stream
      --labels "finding:{severity}" \
      --description "{original finding text with file path, line number, and context}" \
      --deps "discovered-from:{BEAD_ID}" \
-     --priority {P3|P2|P1}
+     --priority {P2|P1}
    ```
+
+   **For batched beads** (SUGGESTION / MINOR — one bead per batch):
+   ```bash
+   bd create --title "{Review|QA} cleanup: {BEAD_ID}" \
+     --type chore \
+     --parent {FINDINGS_EPIC_ID} \
+     --labels "finding:cleanup" \
+     --description "Batched findings from {review|QA} of {BEAD_ID}:
+   - [ ] {finding 1 — file:line, description}
+   - [ ] {finding 2 — file:line, description}
+   - [ ] {finding N — file:line, description}" \
+     --deps "discovered-from:{BEAD_ID}" \
+     --priority P3
+   ```
+
+   **Common rules for all beads:**
    - **`--parent` is MANDATORY** — this is what places the issue inside the epic. Without it the issue becomes a loose bead.
    - **`--deps` is MANDATORY** — use `discovered-from:{BEAD_ID}` to link back to the reviewed task.
-   - **Priority mapping:** P3 for suggestions/extra/minor, P2 for warnings/risk/deviation, P1 for critical findings
-   - **Labels:** `finding:{type}` (lowercase). From code review: `finding:suggestion`, `finding:warning`, `finding:critical`. From QA: `finding:extra`, `finding:deviation`, `finding:risk`, `finding:minor`.
    - **Assignee:** resolve from the original bead's assignee field if available, otherwise leave unassigned
    - **Skip:** `--spec-id`, `--external-ref`, `--acceptance`, `--design` — these are lightweight tracking issues, not full stories
    - **Do NOT use `bd dep add` to link a task to an epic** — that command is for task-to-task dependencies only. Use `--parent` to assign to an epic.
-4. **Create all new issues** (no dry-run needed for findings — these are automated tracking issues)
-5. **Report back** summary with two sections:
+
+4. **Create all issues** (no dry-run needed for findings — these are automated tracking issues)
+5. **Report back** summary with three sections:
    - **Linked:** findings matched to existing tasks (task ID, title, finding description)
-   - **Created:** new issue IDs and titles
+   - **Created (individual):** new issue IDs and titles for WARNING/MAJOR findings
+   - **Created (batched):** single cleanup bead ID with count of items
 </on-review-findings>
 
 ---
