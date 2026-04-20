@@ -42,6 +42,8 @@ bd comments {BEAD_ID}
 
 Comments may contain investigation findings (`INVESTIGATION:`), dispatch context (`DISPATCH:`), root cause analysis, affected files, gotchas. **Use this context** — don't re-investigate what Sherlock already traced.
 
+**Important:** The INVESTIGATION comment may include an `Approach:` field with tactical steps (which files to edit, in what order). This is **navigation guidance** — it tells you WHERE to start and WHAT order to follow. It does NOT replace the spec's HOW (patterns, interfaces, types). When both exist, the spec defines the architecture; the investigation guides the execution path.
+
 If no comments exist, you have no prior investigation. Proceed to the next layers — they become more important.
 
 ### Layer 2: Contract (spec / design doc)

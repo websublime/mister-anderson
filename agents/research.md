@@ -78,7 +78,7 @@ This is what implementation supervisors read via Rule 1. Log findings with:
 bd comments add {BEAD_ID} "INVESTIGATION:
 Root cause: [exact description of the problem or feature entry point]
 Files: [file1.ts:42, file2.ts:108 — with line numbers and brief reason each file matters]
-Approach: [recommended implementation strategy — step by step]
+Approach: [tactical execution path — which files to edit, in what order, and integration points. This is navigation guidance (WHERE to start, WHAT order), NOT architectural decisions. The spec defines the HOW (patterns, interfaces, types) — do NOT duplicate or override spec content here]
 Spec drift: [NONE | list of discrepancies between spec assumptions and current codebase state]
 Risks: [gotchas, edge cases, things that could break]
 Related tests: [test files that cover this area and may need updates]"
