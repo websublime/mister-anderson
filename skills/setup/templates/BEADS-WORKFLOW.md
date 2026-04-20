@@ -57,22 +57,13 @@ You only control: `open → in_progress → in-review + needs-review`. Everythin
    bd update {BEAD_ID} --status in_progress
    ```
 
-5. **Read bead comments for investigation context:**
-   ```bash
-   bd show {BEAD_ID}
-   bd comments {BEAD_ID}
-   ```
-
-6. **If epic child: Read design doc:**
-   ```bash
-   design_path=$(bd show {EPIC_ID} --json | jq -r '.[0].design // empty')
-   # If design_path exists: Read and follow specifications exactly
-   ```
-
-7. **Invoke discipline skill:**
+5. **Invoke discipline skill:**
    ```
    Skill(skill: "subagents-discipline")
    ```
+
+6. **Follow Rule 1 — Read Before You Implement:**
+   The discipline skill defines three layers to read (context, contract, code). Follow Rule 1 exactly — it is the single source of truth for what to read before implementing.
 </on-task-start>
 
 <execute-with-confidence>
