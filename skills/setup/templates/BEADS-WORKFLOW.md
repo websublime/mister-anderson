@@ -120,27 +120,61 @@ WARNING: ALL steps below are MANDATORY. Skipping any step breaks the review pipe
    git push origin $(git branch --show-current)
    ```
 
-5. **Clean up stale labels (if rework cycle):**
+5. **Create Pull Request (if gh CLI available):**
+   After pushing, attempt to create a PR. If `gh` is not installed or not authenticated, skip silently — the code is on the branch and the user can create the PR manually.
+
+   ```bash
+   if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+     BRANCH=$(git branch --show-current)
+     PR_URL=$(gh pr create \
+       --title "{BEAD_ID}: {bead title}" \
+       --body "$(cat <<'PREOF'
+   ## {BEAD_ID}: {bead title}
+
+   {bead description — 1-2 sentences}
+
+   ### What was done
+   {summary from COMPLETED comment}
+
+   ### Files changed
+   {list of files from COMPLETED comment}
+
+   ### Decisions
+   {DECISION comments logged, or "None — implemented as spec"}
+
+   ### Deviations
+   {DEVIATION comments logged, or "None — implemented as spec"}
+   PREOF
+   )" \
+       --base {BASE_BRANCH} 2>/dev/null) && \
+     bd comments add {BEAD_ID} "PR: ${PR_URL}"
+   fi
+   ```
+
+   **Replace all `{...}` placeholders** with actual values from your context. The PR body draws from bead data and comments you already have — do NOT re-read the bead just for this step.
+
+6. **Clean up stale labels (if rework cycle):**
    ```bash
    bd label remove {BEAD_ID} needs-rework 2>/dev/null || true
    ```
 
-6. **Add review label:**
+7. **Add review label:**
    ```bash
    bd label add {BEAD_ID} needs-review
    ```
 
-7. **Mark status:**
+8. **Mark status:**
    ```bash
    bd update {BEAD_ID} --status in-review
    ```
 
-8. **Return completion report:**
+9. **Return completion report:**
    ```
    BEAD {BEAD_ID} COMPLETE
    Branch: [branch name]
    Files: [names only]
    Tests: [pass/fail + how verified]
+   PR: [URL if created, or "skipped — gh CLI not available"]
    Summary: [1 sentence]
    ```
 </on-completion>
