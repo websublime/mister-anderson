@@ -123,11 +123,17 @@ bd show {BEAD_ID} --json | python3 -c "import json,sys; d=json.load(sys.stdin); 
 - **If `parent` is not empty:** use it as `{TARGET_EPIC_ID}`
 - **ONLY if `parent` is empty:** fall back to a "Review Findings" epic
 
+**Before dispatching Fernando**, check what findings were already tracked from the review gate:
+```bash
+bd list --parent {TARGET_EPIC_ID} --json | python3 -c "import json,sys; issues=json.load(sys.stdin); tracked=[i for i in issues if any('discovered-from:{BEAD_ID}' in str(d) for d in i.get('deps',[]))]; print('\n'.join(f\"{i['id']}: {i['title']}\" for i in tracked))"
+```
+Include this list in Fernando's dispatch prompt so he can deduplicate across gates.
+
 **Only dispatch Fernando if MAJORs or MINORs exist.** Use **exactly** these parameters — no more, no less:
 ```python
 Agent(
     subagent_type="beads-owner",
-    prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the validated task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{type}' (lowercase) for each. Include relevant context from QA report. BATCHING RULE: Create individual beads for MAJOR findings only. Batch ALL MINOR findings into a single bead titled 'QA cleanup: {BEAD_ID}' with each item as a checklist in the description. Do NOT create beads for EXTRA or RISK — those are already logged as epic comments. Findings:\n\n{FINDINGS_LIST}"
+    prompt="Create beads issues for the following QA findings from BEAD {BEAD_ID} QA validation. IMPORTANT: Each issue MUST use --parent {TARGET_EPIC_ID} flag to place it inside the epic, and --deps 'discovered-from:{BEAD_ID}' to link back to the validated task. Do NOT use 'bd dep add' to link tasks to epics — only --parent does that. Use label 'finding:{type}' (lowercase) for each. Include relevant context from QA report. BATCHING RULE: Create individual beads for MAJOR findings only. Batch ALL MINOR findings into a single bead titled 'QA cleanup: {BEAD_ID}' with each item as a checklist in the description. Do NOT create beads for EXTRA or RISK — those are already logged as epic comments. DEDUP CONTEXT: The following findings were already tracked from the review gate — deduplicate against them before creating new issues:\n{EXISTING_REVIEW_FINDINGS}\n\nFindings:\n\n{FINDINGS_LIST}"
 )
 ```
 **Do NOT add extra parameters** unless the user explicitly requests it.
