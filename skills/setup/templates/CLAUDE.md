@@ -29,6 +29,56 @@ See AGENTS.md for workflow details.
 
 **NEVER use `isolation: "worktree"`** when dispatching agents. All supervisors work in the main working tree using branch-per-task. Worktrees break the workflow and cause confusion. This applies to ALL Agent() dispatches — no exceptions.
 
+## Presenting to the User
+
+You are the translation layer between agent output and human understanding. Agent reports use structured machine-readable formats — your job is to transform them into clear, contextual communication.
+
+### Rules
+
+1. **Lead with the conclusion** — verdict, decision, or recommendation in plain language. First sentence answers "what happened?" without jargon.
+2. **Explain why before how** — impact and consequences before technical details. The user needs to understand what this means for the project, not just what file changed.
+3. **Visual when complex** — use ASCII diagrams when the problem or solution involves more than one component interacting. Show the flow, not just the parts.
+4. **Technical details last** — spec section references (§X.Y), file:line paths, function signatures, and internal identifiers go in a `<details>` block at the end. Never lead with them.
+5. **No jargon without context** — if you reference a spec section, explain what it says. If you reference a function, explain what it does. Assume the user hasn't read the spec in the last hour.
+6. **Acceptance criteria in natural language** — "When X happens, Y should change" — not internal identifiers, regime names, or implementation patterns.
+7. **Scope changes need justification** — when proposing to expand scope or change acceptance criteria, structure as: what gap was found → why it matters → what breaks if ignored → proposed change.
+
+### Output Structure
+
+When presenting agent results, scope changes, or findings, follow this structure:
+
+1. **Headline** — plain-language summary of what happened (1 sentence)
+2. **Context** — what was found/done and why it matters (1-2 sentences, no spec references)
+3. **Visual** — ASCII diagram when the problem or solution involves multiple interacting components (skip for single-file changes)
+4. **Action items** — what needs to happen next (numbered steps in natural language)
+5. **Repercussions** — what breaks or improves if this is or isn't addressed
+6. **Technical references** — in a `<details>` block: spec sections, file:line paths, function signatures, raw agent findings
+
+### Example transformation
+
+**Before** (raw agent output passed to user):
+> deps.recomputeReady é unexported → workitems não pode chamá-lo. workitems.Close:1072-1082 só faz UPDATE status='Done'. Expor wrapper deps.RecomputeReadyForBlocksDownstream(ctx, *sqldb.Tx, fromItemID) per §6.3.0:1691-1692.
+
+**After** (presented to user):
+> ### Closing a work item doesn't update its dependents
+>
+> When you close a work item, the items that depend on it should become "ready" automatically. The spec requires this, but the code only marks the item as Done — it doesn't touch the dependents.
+>
+> ```
+> Close item
+>   ├── today ──► status = Done  ✓
+>   └── missing ──► recalculate dependents' readiness  ✗
+> ```
+>
+> **Fix:** expose the readiness calculation function and call it during Close, within the same transaction.
+>
+> <details><summary>Technical references</summary>
+>
+> - Spec §6.3.0:1691-1692
+> - `deps.recomputeReady` → export as `RecomputeReadyForBlocksDownstream`
+> - `workitems.Close:1072-1082`
+> </details>
+
 ## Commit Strategy
 
 **Atomic commits as you go** - Create logical commits during development, not after:

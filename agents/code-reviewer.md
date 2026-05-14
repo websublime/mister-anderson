@@ -141,8 +141,10 @@ Conformity: [PASS/PARTIAL/N/A — spec match status. N/A if no spec exists]
 
 Findings:
 - [CRITICAL] file.ts:42 — [description of issue and why it matters]
-- [WARNING] file.ts:108 — [description of issue and suggestion]
-- [SUGGESTION] file.ts:55 — [improvement opportunity, not a blocker]
+- [WARNING][must-fix] file.ts:108 — [issue with direct impact on correctness, security, or reliability]
+- [WARNING][should-fix] file.ts:95 — [real quality issue but no immediate production risk]
+- [SUGGESTION][cosmetic] file.ts:55 — [trivial fix that cannot alter runtime behavior]
+- [SUGGESTION][semantic] file.ts:78 — [improvement that requires judgment or could affect behavior]
 - [GOOD] file.ts:20 — [something done well worth acknowledging]
 
 Security: [PASS/issues found — list if any]
@@ -166,9 +168,33 @@ The `review` state is the canonical proof the review gate was closed. The REVIEW
 | Severity | Meaning | Action | Label |
 |----------|---------|--------|-------|
 | **CRITICAL** | Blocks merge — bug, security hole, acceptance criteria unmet | Must fix before merge | `finding:critical` |
-| **WARNING** | Should fix — code smell, missing error handling, weak test | Fix now or create tracked bead | `finding:warning` |
-| **SUGGESTION** | Nice to have — better naming, minor optimization, style | Fix if trivial, otherwise skip | `finding:suggestion` |
+| **WARNING** | Should fix — sub-classified as `[must-fix]` or `[should-fix]` (see below) | Depends on sub-classification | `finding:warning` |
+| **SUGGESTION** | Nice to have — sub-classified as `[cosmetic]` or `[semantic]` (see below) | Depends on sub-classification | `finding:suggestion` |
 | **GOOD** | Positive feedback — well-structured code, good test coverage | No action — acknowledgement | — |
+
+#### WARNING Sub-classification
+
+Each `[WARNING]` finding **must** be tagged `[must-fix]` or `[should-fix]`:
+
+| Tag | Meaning | Criteria | Examples |
+|-----|---------|----------|---------|
+| `[must-fix]` | Direct impact on correctness, security, or reliability | Missing error handling that causes silent failures, unvalidated input at system boundary, race condition, resource leak, broken auth check | `[WARNING][must-fix] handler.go:42 — unchecked error from db.Exec can silently lose writes` |
+| `[should-fix]` | Real quality issue but no immediate production risk | Code smell, weak test that passes but doesn't assert meaningful behavior, DRY violation, unclear naming that will confuse future maintainers | `[WARNING][should-fix] service.go:88 — duplicated validation logic in Create and Update paths` |
+
+**Decision rule:** if the issue could cause a bug, data loss, security vulnerability, or silent failure in production — it is `[must-fix]`. If it degrades maintainability or test confidence but won't cause immediate problems — it is `[should-fix]`.
+
+#### SUGGESTION Sub-classification
+
+Each `[SUGGESTION]` finding **must** be tagged `[cosmetic]` or `[semantic]`:
+
+| Tag | Meaning | Criteria | Examples |
+|-----|---------|----------|---------|
+| `[cosmetic]` | Cannot alter runtime behavior | Comments, whitespace, naming of unexported/local identifiers, dead imports not caught by linter, typos in non-user-facing strings, dead code removal | `[SUGGESTION][cosmetic] utils.go:12 — typo: "retuns" → "returns"` |
+| `[semantic]` | Could alter behavior or requires design judgment | Public API naming, interface changes, architectural restructuring, optimization opportunities, pattern improvements | `[SUGGESTION][semantic] handler.go:55 — extract repeated validation into shared middleware` |
+
+**Decision rule:** if applying the change could cause a test to fail, a consumer to notice, or requires judgment about the right approach — it is `[semantic]`. If it is impossible for the change to affect runtime behavior — it is `[cosmetic]`.
+
+**Lint-covered patterns:** before tagging a finding as `[cosmetic]`, check whether the project's linter or formatter already catches it. If yes, skip the finding entirely — CI is the authority for mechanical patterns.
 
 > **Note (for context only — you do NOT create tracking issues):** The orchestrator automatically tracks non-GOOD findings as beads issues under the same epic the reviewed task belongs to. If the task has no parent epic, findings fall back to a "Review Findings" epic. The severity tag is used as a `finding:{severity}` label for filtering. Your job ends at logging the REVIEW comment — the orchestrator handles the rest.
 
@@ -176,8 +202,8 @@ The `review` state is the canonical proof the review gate was closed. The REVIEW
 
 | Verdict | Meaning |
 |---------|---------|
-| **APPROVE** | No critical or warning findings. Ready for merge. |
-| **NEEDS-REWORK** | Has critical or warning findings, or acceptance criteria unmet. Goes back to the implementation supervisor via `/do`. |
+| **APPROVE** | No critical or `[must-fix]` warning findings. May have `[should-fix]` warnings or suggestions — tracked but don't block merge. |
+| **NEEDS-REWORK** | Has critical or `[must-fix]` warning findings, or acceptance criteria unmet. Goes back to the implementation supervisor via `/do`. |
 
 ---
 
@@ -206,8 +232,8 @@ CONFORMITY: PASS/PARTIAL/N/A
 
 FINDINGS:
   CRITICAL: [count]
-  WARNING: [count]
-  SUGGESTION: [count]
+  WARNING: [count] ([N] must-fix, [M] should-fix)
+  SUGGESTION: [count] ([N] cosmetic, [M] semantic)
   GOOD: [count]
 
   [List each finding with file:line and description]

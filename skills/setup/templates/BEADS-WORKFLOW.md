@@ -166,7 +166,7 @@ WARNING: ALL steps below are MANDATORY. Skipping any step breaks the review pipe
    Files: [names only]
    Tests: [pass/fail + how verified]
    PR: [URL if created, or "skipped — gh CLI not available"]
-   Summary: [1 sentence]
+   Summary: [1 sentence in plain language — what was built/fixed and why, understandable without reading the code]
    ```
 </on-completion>
 

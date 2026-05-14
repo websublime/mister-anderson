@@ -99,9 +99,14 @@ git branch -a | grep {BEAD_ID}
 </on-execute>
 
 <on-complete>
-1. Confirm the supervisor completed
-2. Show the branch name used
-3. Show the PR URL if the supervisor created one (look for `PR:` in the completion report or bead comments)
+Present the result following the **Presenting to the User** guidelines:
+
+1. **Headline**: "{bead title} — implementation complete" in plain language
+2. **What was done**: 1-2 sentences summarizing what the supervisor built — translate the COMPLETED bead comment into natural language, don't paste raw
+3. **Branch and PR**: show branch name and PR URL (look for `PR:` in the completion report or bead comments)
+4. **Decisions/Deviations**: if the supervisor logged DECISION or DEVIATION comments, explain each in plain language — what choice was made, why, and what the alternative was
+5. **Next step**: recommend `/review {BEAD_ID}`
+6. **Technical details**: raw COMPLETED comment and file list in a `<details>` block
 </on-complete>
 
 <on-next>

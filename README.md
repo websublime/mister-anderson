@@ -362,19 +362,25 @@ Code review gate — dispatches Linus to analyze the implementation branch.
 - **Requires:** Bead with `needs-review` label
 - **What happens:**
   1. Linus analyzes the branch diff against acceptance criteria
-  2. Each finding gets a severity: `CRITICAL`, `WARNING`, `SUGGESTION`, `GOOD`
+  2. Each finding gets a severity with sub-classification:
+     - `CRITICAL` — blocks merge
+     - `WARNING[must-fix]` / `WARNING[should-fix]` — must-fix blocks merge, should-fix is tracked but doesn't block
+     - `SUGGESTION[cosmetic]` / `SUGGESTION[semantic]` — cosmetic is auto-applied, semantic is tracked
+     - `GOOD` — positive acknowledgement
   3. Logs a structured `REVIEW:` comment with verdict
 
-**If APPROVE:**
+**If APPROVE** (no CRITICAL or `[must-fix]` WARNING):
+- `[cosmetic]` SUGGESTIONs auto-applied by the supervisor (committed as `chore: review-cleanup`)
 - Labels: `needs-review` → `approved`
-- All non-`[GOOD]` findings tracked as issues in the parent epic
+- `[should-fix]` WARNINGs and `[semantic]` SUGGESTIONs tracked as issues in the parent epic
 - Ready for QA
 
-**If NEEDS-REWORK:**
+**If NEEDS-REWORK** (has CRITICAL or `[must-fix]` WARNING):
 - Labels: `needs-review` → `needs-rework`, status → `in_progress`
-- `SUGGESTION` findings tracked as separate issues (out of scope for rework)
+- `[should-fix]` WARNINGs and `[semantic]` SUGGESTIONs tracked as separate issues
+- `[cosmetic]` SUGGESTIONs bundled into the rework prompt
 - Auto-dispatches the implementation supervisor with `y/n` confirmation
-- Supervisor reads the REVIEW comment to know exactly what to fix (CRITICAL + WARNING)
+- Supervisor reads the REVIEW comment to know what to fix (CRITICAL + `[must-fix]` WARNING)
 - After rework, the task returns to `/review`
 
 **Escape hatch:** Answer `n` to the dispatch confirmation. Labels are already set — resume later with `/do`.
@@ -551,16 +557,31 @@ QA:            (Quinn)       — spec conformity, tests, build, lint, final verd
 DEFERRED:      (orchestrator) — EXTRA/RISK findings logged on epics as deferred backlog
 ```
 
-### Finding Severity Threshold
+### Finding Severity & Tracking Policy
 
-Findings from review/QA are tracked based on severity to prevent task proliferation:
+Findings from review/QA are tracked based on severity and sub-classification to prevent task proliferation:
+
+**Review findings (Linus):**
+
+| Severity | Sub-tag | Action |
+|---|---|---|
+| CRITICAL | — | Rework in same bead — never separate |
+| WARNING | `[must-fix]` | Individual bead — direct impact on correctness/security/reliability |
+| WARNING | `[should-fix]` | Batched into single "Review warnings" bead — no immediate production risk |
+| SUGGESTION | `[semantic]` | Batched into single "Review cleanup" bead — requires judgment |
+| SUGGESTION | `[cosmetic]` | Auto-applied by supervisor before APPROVE — trivial, non-behavioral |
+| GOOD | — | Not tracked — acknowledgement only |
+
+**QA findings (Quinn):**
 
 | Severity | Action |
 |---|---|
-| CRITICAL / BLOCKER | Rework in same bead — never separate |
-| WARNING / MAJOR | Individual bead — justifies pipeline |
-| SUGGESTION / MINOR | Batched into single cleanup bead per epic |
+| BLOCKER | Rework in same bead — never separate |
+| MAJOR | Individual bead — justifies pipeline |
+| MINOR | Batched into single "QA cleanup" bead per epic |
 | EXTRA / RISK | Epic comment (deferred backlog) — not a bead |
+
+**Cycle breaker:** Findings beads (label `finding:*`) go through the normal review/QA pipeline — CRITICALs and `[must-fix]` WARNINGs still trigger rework. However, secondary findings (`[should-fix]`, `[semantic]`, MINORs) found during review/QA of a findings bead are reported in the comment for transparency but do NOT generate new beads. This prevents recursive proliferation where findings create findings indefinitely.
 
 This trail survives session restarts and context compaction. Any agent or human can reconstruct full context:
 

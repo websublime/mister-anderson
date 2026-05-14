@@ -108,6 +108,7 @@ Extract actionable findings from the QA comment and apply the **severity thresho
 - **FAIL + rework:** BLOCKER/MAJOR addressed by rework; batch MINORs, log EXTRA/RISK as comments
 - **FAIL + follow-up/override:** same as PASS policy
 - **If no MAJORs or MINORs exist:** log EXTRA/RISK as epic comments only — do NOT dispatch Fernando for bead creation
+- **Findings beads** (bead has any `finding:*` label): the QA verdict (PASS / FAIL) and rework cycle operate normally — BLOCKERs and MAJORs are still fixed via rework on the same bead. However, Step 4 tracking is skipped: MINORs found during QA of a findings bead are reported in the QA comment for transparency but do NOT generate new beads. This breaks the recursive cycle where findings create findings indefinitely.
 
 **Log EXTRA/RISK as epic comments** (deferred backlog — not beads):
 ```bash
@@ -164,8 +165,16 @@ Agent(
 </on-execute>
 
 <on-complete>
-1. Show verdict (PASS or FAIL)
-2. Report findings tracked: {N} issues created in epic
+Present the result following the **Presenting to the User** guidelines:
+
+1. **Headline**: verdict in plain language — "QA passed — all checks green, ready to merge" or "QA found {N} issues: {brief summary}"
+2. **What was found**:
+   - If PASS: brief summary of what was validated (conformity, tests, build, lint). Highlight any EXTRA or RISK items logged as deferred backlog.
+   - If FAIL: for each BLOCKER/MAJOR, explain in natural language what failed, why it matters, and what needs to happen. Use a ASCII diagram if failures involve multi-component interactions.
+3. **Findings tracked**: if Fernando created beads, list with plain-language descriptions. If EXTRA/RISK items were logged to the epic, mention them.
+4. **Repercussions**: what breaks if FAIL findings aren't addressed
+5. **Next step**: close and merge (PASS) or confirm rework dispatch (FAIL)
+6. **Technical details**: raw QA comment, test/build/lint output, and conformity details in a `<details>` block
 </on-complete>
 
 <on-complete if="verdict=PASS">
