@@ -262,6 +262,8 @@ Decompose a spec into trackable epics and issues.
 
 **Reference-only beads — critical design decision:**
 
+> **Tasks define WHAT to do; specs define HOW to do it.**
+
 Beads are tracking artifacts that **point to** specs — they are not specs themselves.
 
 | Field | Contains | Does NOT contain |

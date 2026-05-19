@@ -5,6 +5,17 @@ description: Core engineering principles for implementation tasks
 
 # Implementation Principles
 
+## Foundational Axiom: Tasks are WHAT; Specs are HOW
+
+**Tasks define WHAT to do. Specs define HOW to do it.**
+
+- A **task** (bead) answers: *Why does this work exist? What must be true when it's done?*
+- A **spec** answers: *How should it be built? What patterns, interfaces, types, and architecture to use?*
+
+This separation is non-negotiable. Tasks contain verifiable acceptance criteria and pointers to specs — never implementation details. Specs contain the technical contract — never project management metadata. When both exist, the spec is the implementation authority; the task is the tracking authority.
+
+---
+
 ## Rule 0: Follow Instructions Exactly — No Unilateral Decisions
 
 **This is the highest-priority rule. It overrides any "good idea" you might have.**

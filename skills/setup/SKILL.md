@@ -112,10 +112,11 @@ Agent(
 ### Step 5: Write Version File
 
 ```bash
-echo "0.3.0" > ./.claude/.mister-anderson-version
+PLUGIN_VERSION=$(grep -o '"version": *"[^"]*"' "$CLAUDE_PLUGIN_ROOT/.claude-plugin/plugin.json" | cut -d'"' -f4)
+echo "$PLUGIN_VERSION" > ./.claude/.mister-anderson-version
 ```
 
-> When bumping the plugin version, update this step to match `plugin.json`.
+> The version is read dynamically from `plugin.json` — no manual update needed when bumping.
 
 ---
 
