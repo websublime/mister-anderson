@@ -19,8 +19,9 @@ SUBAGENT_TYPE=$(echo "$INPUT" | jq -r '.tool_input.subagent_type // empty')
 if [[ "$SUBAGENT_TYPE" == *"-supervisor"* ]]; then
   cat << 'EOF'
 <system-reminder>
-SUPERVISOR DISPATCH: Before implementing, invoke `/subagents-discipline` skill.
-This loads mandatory Rules 0-6 for verification-first development.
+SUPERVISOR DISPATCH: Before implementing, invoke two skills:
+  • `/subagents-discipline` — mandatory Rules 0-6 for verification-first development.
+  • `/core-loop` — the staged-execution loop (stage map → delegate → failable verify → self-critique).
 </system-reminder>
 EOF
 fi
